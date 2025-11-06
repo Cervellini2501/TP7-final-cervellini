@@ -1,0 +1,30 @@
+{
+  "name": "palabras-frontend",
+  "version": "1.0.0",
+  "description": "Frontend para gestión de palabras - TP04",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "build": "echo 'Build frontend completed - static files ready'",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
+    "jest-fetch-mock": "^3.0.3",
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "frontend",
+    "express",
+    "static",
+    "tp04"
+  ],
+  "author": "Tu Nombre",
+  "license": "MIT"
+}
