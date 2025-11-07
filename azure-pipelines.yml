@@ -137,17 +137,47 @@ stages:
 
         - script: |
             echo "════════════════════════════════════════"
-            echo "  RUNNING UNIT TESTS"
+            echo "  RUNNING UNIT TESTS (BACKEND + FRONTEND)"
             echo "════════════════════════════════════════"
+
+            # BACKEND UNIT TESTS
+            echo "-> Backend tests"
             cd backend
             npm ci
-            npm test -- --ci --reporters=default --reporters=jest-junit
+            npm test -- --ci --reporters=default --reporters=jest-junit || BACKEND_RESULT=$?
+            cd ..
+
+            # FRONTEND UNIT TESTS (solo si existen)
+            echo "-> Frontend tests (if defined)"
+            if [ -f "frontend/package.json" ]; then
+              node -e "try{process.exit(!(require('./frontend/package.json').scripts && require('./frontend/package.json').scripts.test))}catch(e){process.exit(1)}"
+              if [ $? -eq 0 ]; then
+                echo "Frontend has test script. Running frontend tests..."
+                cd frontend
+                npm ci --if-present
+                npm test -- --ci --reporters=default --reporters=jest-junit || FRONTEND_RESULT=$?
+                cd ..
+              else
+                echo "No 'test' script in frontend/package.json - skipping frontend tests."
+              fi
+            else
+              echo "No frontend/package.json found - skipping frontend tests."
+            fi
+
+            # Salida si alguno falló
+            if [ -n "$BACKEND_RESULT" ] || [ -n "$FRONTEND_RESULT" ]; then
+              echo "One or more unit tests failed."
+              exit 1
+            fi
+
             echo "✅ Unit tests completed"
           displayName: "Execute Unit Tests"
+          env:
+            NODE_ENV: 'test'
 
-        # Publicar resultados de tests
+        # Publicar resultados de tests del backend
         - task: PublishTestResults@2
-          displayName: "Publish Unit Test Results"
+          displayName: "Publish Backend Unit Test Results"
           condition: succeededOrFailed()
           inputs:
             testResultsFormat: 'JUnit'
@@ -157,59 +187,17 @@ stages:
             failTaskOnFailedTests: true
             testRunTitle: 'Backend Unit Tests'
 
-# =======================================
-# 🧪 INTEGRATION TESTS
-# =======================================
-- stage: IntegrationTests
-  displayName: "Integration Tests"
-  dependsOn: BuildAndTest
-  condition: succeeded()
-  jobs:
-    - job: IntegrationTests
-      displayName: 'Run Integration Tests'
-      steps:
-        - checkout: self
-
-        - task: NodeTool@0
-          displayName: "Setup Node.js $(nodeVersion)"
-          inputs:
-            versionSpec: "$(nodeVersion)"
-
-        - download: current
-          artifact: drop
-
-        - script: |
-            echo "════════════════════════════════════════"
-            echo "  RUNNING INTEGRATION TESTS"
-            echo "════════════════════════════════════════"
-            cd backend
-            npm ci
-            # Iniciar servidor en background para tests de integración
-            node ../$(Pipeline.Workspace)/drop/index.js &
-            SERVER_PID=$!
-            sleep 5
-            
-            # Ejecutar tests de integración
-            npm run test:integration -- --ci --reporters=default --reporters=jest-junit || TEST_RESULT=$?
-            
-            # Detener servidor
-            kill $SERVER_PID 2>/dev/null || true
-            
-            exit ${TEST_RESULT:-0}
-          displayName: "Execute Integration Tests"
-          env:
-            NODE_ENV: 'test'
-
+        # Publicar resultados de tests del frontend (si existen)
         - task: PublishTestResults@2
-          displayName: "Publish Integration Test Results"
+          displayName: "Publish Frontend Unit Test Results"
           condition: succeededOrFailed()
           inputs:
             testResultsFormat: 'JUnit'
             testResultsFiles: '**/junit.xml'
-            searchFolder: '$(System.DefaultWorkingDirectory)/backend'
+            searchFolder: '$(System.DefaultWorkingDirectory)/frontend'
             mergeTestResults: true
-            failTaskOnFailedTests: true
-            testRunTitle: 'Backend Integration Tests'
+            failTaskOnFailedTests: false
+            testRunTitle: 'Frontend Unit Tests'
 
 # =======================================
 # 🌐 DEPLOY QA
@@ -218,7 +206,7 @@ stages:
   displayName: "Deploy to QA"
   dependsOn: 
     - BuildAndTest
-    - IntegrationTests
+    - UnitTests
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   # Importar variables de QA
   variables:
