@@ -100,7 +100,7 @@ stages:
             # BACKEND COVERAGE
             echo "-> Backend coverage"
             cd backend
-            npm run test:coverage -- --ci || true
+            npm test -- --coverage
             
             # Verificar cobertura del backend usando Python (disponible en Ubuntu agent)
             COVERAGE=$(python3 -c "
@@ -130,7 +130,7 @@ stages:
             # FRONTEND COVERAGE (mandatory)
             echo "-> Frontend coverage"
             cd frontend
-            npm run test:coverage -- --ci || true
+            npm test -- --coverage
             
             # Verificar cobertura del frontend usando Python
             COVERAGE_FRONT=$(python3 -c "
