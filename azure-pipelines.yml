@@ -182,6 +182,16 @@ stages:
           displayName: "Frontend - Verify Coverage Threshold"
           condition: succeededOrFailed()
 
+        - task: SonarCloudPrepare@3
+          inputs:
+            SonarQube: 'sonar-cloud-connection'
+            organization: 'sofiaoliveto'
+            scannerMode: 'cli'
+            configMode: 'manual'
+            cliProjectKey: 'sofiaoliveto_TP7'
+            cliProjectName: 'TP7'
+            cliSources: '.'
+
         # ===============================================
         # BUILD Y PREPARAR ARTEFACTOS
         # ===============================================
@@ -204,6 +214,14 @@ stages:
               styles.css
             TargetFolder: 'backend/frontend'
             OverWrite: true
+
+        - task: SonarCloudAnalyze@3
+          inputs:
+            jdkversion: 'JAVA_HOME_17_X64'
+
+        - task: SonarCloudPublish@3
+          inputs:
+            pollingTimeoutSec: '300'
 
         - script: |
             echo "════════════════════════════════════════"
