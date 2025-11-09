@@ -187,7 +187,7 @@ stages:
             SonarQube: 'sonar-cloud-connection'
             organization: 'sofiaoliveto'
             scannerMode: 'cli'
-            configMode: 'manual'
+            configMode: 'file'
             cliProjectKey: 'sofiaoliveto_TP7'
             cliProjectName: 'TP7'
             cliSources: '.'
