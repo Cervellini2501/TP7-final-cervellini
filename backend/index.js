@@ -102,7 +102,6 @@ if (require.main === module) {
     console.log('════════════════════════════════════════');
     console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
     console.log(`📍 Environment: ${ENV_NAME} (NODE_ENV: ${NODE_ENV})`);
-    console.log(`💾 Database: ${DB_PATH}`);
     console.log(`📁 Serving frontend from: ${path.join(__dirname, 'frontend')}`);
     console.log(`🌐 Listening on 0.0.0.0:${PORT}`);
     console.log('════════════════════════════════════════');

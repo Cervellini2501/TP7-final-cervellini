@@ -1,4 +1,13 @@
-const API_URL = window.location.origin + '/api';
+// Determinar la URL de la API según el entorno
+let API_URL;
+// En producción (Azure), el backend sirve el frontend
+// En desarrollo local, apuntar al backend en puerto 3000
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    API_URL = 'http://localhost:3000/api';
+} else {
+    // En Azure App Service, el backend y frontend están en el mismo origen
+    API_URL = window.location.origin + '/api';
+}
 
 // Cargar palabras al inicio
 document.addEventListener('DOMContentLoaded', function() {
