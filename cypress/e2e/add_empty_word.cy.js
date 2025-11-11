@@ -1,6 +1,10 @@
 describe('Validación de palabra vacía', () => {
   it('No agrega palabra si el input está vacío', () => {
-    cy.visit('http://localhost:8080');
+    cy.visit('palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net');
+
+    // Esperar a que el contenedor de palabras exista y un pequeño buffer antes de contar
+    cy.get('#listaPalabras', { timeout: 10000 }).should('exist');
+    cy.wait(1000); // <-- tiempo de espera agregado
 
     // Contar cuántas palabras hay antes
     cy.get('#listaPalabras div').then(($itemsBefore) => {
