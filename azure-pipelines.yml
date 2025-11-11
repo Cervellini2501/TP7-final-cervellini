@@ -249,6 +249,9 @@ stages:
             ArtifactName: "drop"
             publishLocation: 'Container'
             
+# =======================================
+# 🌐 DEPLOY QA
+# =======================================
 - stage: Deploy_QA
   displayName: "Deploy to QA"
   dependsOn: BuildAndTest
@@ -300,60 +303,3 @@ stages:
                   curl -f https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net/health || echo "⚠️ Health check pending"
                 displayName: "Health Check QA"
                 continueOnError: true
-                
-            #
-            # =======================================
-            # 🚀 DEPLOY PROD (DESACTIVADO: BLOQUE COMENTADO)
-            # =======================================
-            # - stage: Deploy_PROD
-            #   displayName: "Deploy to Production"
-            #   dependsOn: Deploy_QA
-            #   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-            #   # Importar variables de PROD
-            #   variables:
-            #   - group: PROD-Variables
-            #   jobs:
-            #     - deployment: DeployPROD
-            #       displayName: "Desplegar PROD"
-            #       environment: "PROD"
-            #       strategy:
-            #         runOnce:
-            #           deploy:
-            #             steps:
-            #               - checkout: self
-            #                 
-            #               
-            #               - download: current
-            #                 artifact: drop
-            #
-            #               # Configurar variables de entorno
-            #               - task: AzureAppServiceSettings@1
-            #                 displayName: "Configure PROD Environment Variables"
-            #                 inputs:
-            #                   azureSubscription: "$(azureSubscription)"
-            #                   appName: "$(webAppNamePROD)"  
-            #                   resourceGroupName: "palabras-ingsoft3-2025"
-            #                   appSettings: |
-            #                     [
-            #                       { "name": "ENVIRONMENT_NAME", "value": "$(ENVIRONMENT_NAME)" },
-            #                       { "name": "NODE_ENV", "value": "$(NODE_ENV)" },
-            #                       { "name": "DB_PATH", "value": "$(DB_PATH)" }
-            #                     ]
-            #
-            #               - task: AzureWebApp@1
-            #                 displayName: "Deploy Backend+Frontend PROD"
-            #                 inputs:
-            #                   azureSubscription: "$(azureSubscription)"
-            #                   appType: 'webAppLinux'
-            #                   appName: "$(webAppNamePROD)"
-            #                   package: "$(Pipeline.Workspace)/drop"
-            #                   runtimeStack: 'NODE|20-lts'
-            #                   startUpCommand: 'node index.js'
-            #
-            #               - script: |
-            #                   echo "⏳ Esperando 30 segundos..."
-            #                   sleep 30
-            #                   echo "🔍 Verificando PROD: $(ENVIRONMENT_NAME)"
-            #                   curl -f https://palabras-prod-amgufubhacevetcn.brazilsouth-01.azurewebsites.net/health || echo "⚠️ Health check pending"
-            #                 displayName: "Health Check PROD"
-            #                 continueOnError: true
