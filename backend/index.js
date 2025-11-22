@@ -17,10 +17,63 @@ app.use(cors());
 app.use(express.json());
 
 // Servir archivos estáticos del frontend
-app.use(express.static(path.join(__dirname, 'frontend')));
+app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
 // Importar la base de datos
 const db = require('./db');
+
+// API Routes - Autenticación
+app.post('/api/register', (req, res) => {
+  const { username, password } = req.body;
+  console.log('📥 POST /api/register ->', username);
+  
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
+  }
+  
+  db.run('INSERT INTO usuarios (username, password) VALUES (?, ?)', [username, password], function(err) {
+    if (err) {
+      console.error('❌ Error:', err.message);
+      if (err.message.includes('UNIQUE')) {
+        return res.status(400).json({ error: 'El usuario ya existe' });
+      }
+      res.status(500).json({ error: err.message });
+    } else {
+      console.log(`✅ Usuario registrado - ID: ${this.lastID}`);
+      res.json({ 
+        id: this.lastID, 
+        username: username,
+        mensaje: 'Usuario registrado exitosamente' 
+      });
+    }
+  });
+});
+
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  console.log('📥 POST /api/login ->', username);
+  
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
+  }
+  
+  db.get('SELECT * FROM usuarios WHERE username = ? AND password = ?', [username, password], (err, row) => {
+    if (err) {
+      console.error('❌ Error:', err.message);
+      res.status(500).json({ error: err.message });
+    } else if (!row) {
+      console.log('❌ Login fallido');
+      res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+    } else {
+      console.log(`✅ Login exitoso - Usuario: ${username}`);
+      res.json({ 
+        id: row.id,
+        username: row.username,
+        mensaje: 'Login exitoso' 
+      });
+    }
+  });
+});
 
 // API Routes
 app.get('/api/palabras', (req, res) => {
@@ -59,6 +112,32 @@ app.post('/api/palabras', (req, res) => {
   });
 });
 
+app.put('/api/palabras/:id', (req, res) => {
+  const { id } = req.params;
+  const { palabra } = req.body;
+  console.log('📥 PUT /api/palabras/' + id, '->', palabra);
+  
+  if (!palabra) {
+    return res.status(400).json({ error: 'La palabra es requerida' });
+  }
+  
+  db.run('UPDATE palabras SET palabra = ? WHERE id = ?', [palabra, id], function(err) {
+    if (err) {
+      console.error('❌ Error:', err.message);
+      res.status(500).json({ error: err.message });
+    } else if (this.changes === 0) {
+      res.status(404).json({ error: 'Palabra no encontrada' });
+    } else {
+      console.log(`✅ Palabra actualizada - ID: ${id}`);
+      res.json({ 
+        id: parseInt(id),
+        palabra: palabra,
+        mensaje: 'Palabra actualizada exitosamente' 
+      });
+    }
+  });
+});
+
 app.delete('/api/palabras/:id', (req, res) => {
   const { id } = req.params;
   console.log('📥 DELETE /api/palabras/' + id);
@@ -90,7 +169,7 @@ app.get('/health', (req, res) => {
 
 // Catch-all
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'frontend', 'login.html'));
 });
 
 // ✅ EXPORTAR LA APP (para tests)

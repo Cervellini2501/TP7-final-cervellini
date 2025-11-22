@@ -102,4 +102,68 @@ describe('Palabras API', () => {
             expect(response.status).toBe(404);
         });
     });
+
+    describe('PUT /api/palabras/:id', () => {
+        test('debería actualizar una palabra existente', async () => {
+            const palabraActualizada = { palabra: 'gato-editado' };
+            
+            db.run.mockImplementation((query, params, callback) => {
+                callback.call({ changes: 1 }, null);
+            });
+
+            const response = await request(app)
+                .put('/api/palabras/1')
+                .send(palabraActualizada);
+
+            expect(response.status).toBe(200);
+            expect(response.body).toHaveProperty('id', 1);
+            expect(response.body.palabra).toBe('gato-editado');
+            expect(response.body).toHaveProperty('mensaje', 'Palabra actualizada exitosamente');
+            expect(db.run).toHaveBeenCalledTimes(1);
+        });
+
+        test('debería validar que la palabra no esté vacía al actualizar', async () => {
+            const response = await request(app)
+                .put('/api/palabras/1')
+                .send({ palabra: '' });
+
+            expect(response.status).toBe(400);
+            expect(response.body).toHaveProperty('error', 'La palabra es requerida');
+        });
+
+        test('debería validar que el campo palabra exista al actualizar', async () => {
+            const response = await request(app)
+                .put('/api/palabras/1')
+                .send({});
+
+            expect(response.status).toBe(400);
+            expect(response.body).toHaveProperty('error', 'La palabra es requerida');
+        });
+
+        test('debería retornar 404 si la palabra a actualizar no existe', async () => {
+            db.run.mockImplementation((query, params, callback) => {
+                callback.call({ changes: 0 }, null);
+            });
+
+            const response = await request(app)
+                .put('/api/palabras/999')
+                .send({ palabra: 'test' });
+
+            expect(response.status).toBe(404);
+            expect(response.body).toHaveProperty('error', 'Palabra no encontrada');
+        });
+
+        test('debería manejar errores de base de datos al actualizar', async () => {
+            db.run.mockImplementation((query, params, callback) => {
+                callback.call({ changes: 0 }, new Error('Database error'));
+            });
+
+            const response = await request(app)
+                .put('/api/palabras/1')
+                .send({ palabra: 'test' });
+
+            expect(response.status).toBe(500);
+            expect(response.body).toHaveProperty('error');
+        });
+    });
 });

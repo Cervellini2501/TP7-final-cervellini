@@ -13,6 +13,12 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
       palabra TEXT NOT NULL,
       fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
+    db.run(`CREATE TABLE IF NOT EXISTS usuarios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
   }
 });
 
