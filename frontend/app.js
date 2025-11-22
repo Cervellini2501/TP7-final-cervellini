@@ -11,6 +11,16 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
 
 // Cargar palabras al inicio
 document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si hay sesión
+    const usuario = window.localStorage.getItem('usuario');
+    if (!usuario) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    // Mostrar usuario actual
+    document.getElementById('usuarioActual').textContent = `👤 ${usuario}`;
+    
     cargarPalabras();
     
     // Permitir agregar palabra con Enter
@@ -21,12 +31,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Función para cerrar sesión
+function cerrarSesion() {
+    window.localStorage.removeItem('usuario');
+    window.location.href = 'login.html';
+}
+
 // Función para cargar y mostrar todas las palabras
 async function cargarPalabras() {
     try {
         const response = await fetch(`${API_URL}/palabras`);
         const palabras = await response.json();
         
+        palabrasOriginales = palabras;
         const listaPalabras = document.getElementById('listaPalabras');
         
         if (palabras.length === 0) {
@@ -34,14 +51,7 @@ async function cargarPalabras() {
             return;
         }
         
-        listaPalabras.innerHTML = palabras.map(palabra => `
-            <div class="palabra-item">
-                <span><strong>${palabra.palabra}</strong></span>
-                <button class="delete-btn" onclick="eliminarPalabra(${palabra.id})">
-                    Eliminar
-                </button>
-            </div>
-        `).join('');
+        ordenarPalabras(ordenActual);
         
     } catch (error) {
         console.error('Error al cargar palabras:', error);
@@ -110,6 +120,125 @@ async function eliminarPalabra(id) {
     }
 }
 
+// Función para editar una palabra
+async function editarPalabra(id, palabraActual) {
+    const nuevaPalabra = prompt('Editar palabra:', palabraActual);
+    
+    if (nuevaPalabra === null) {
+        return; // Usuario canceló
+    }
+    
+    if (!nuevaPalabra.trim()) {
+        mostrarMensaje('La palabra no puede estar vacía', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/palabras/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ palabra: nuevaPalabra.trim() })
+        });
+        
+        const resultado = await response.json();
+        
+        if (response.ok) {
+            mostrarMensaje('Palabra actualizada exitosamente', 'exito');
+            cargarPalabras();
+        } else {
+            mostrarMensaje(resultado.error || 'Error al actualizar palabra', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error al actualizar palabra:', error);
+        mostrarMensaje('Error al actualizar la palabra', 'error');
+    }
+}
+
+// Variables globales para ordenamiento y filtrado
+let palabrasOriginales = [];
+let ordenActual = 'fecha-desc'; // fecha-desc, fecha-asc, nombre-asc, nombre-desc
+
+// Función para ordenar palabras
+function ordenarPalabras(tipo) {
+    ordenActual = tipo;
+    const listaPalabras = document.getElementById('listaPalabras');
+    
+    // Check if palabrasOriginales is empty BEFORE sorting
+    if (palabrasOriginales.length === 0) {
+        listaPalabras.innerHTML = '<p style="text-align: center; color: #666;">No hay palabras guardadas</p>';
+        return;
+    }
+    
+    let palabrasOrdenadas = [...palabrasOriginales];
+    
+    switch(tipo) {
+        case 'nombre-asc':
+            palabrasOrdenadas.sort((a, b) => a.palabra.localeCompare(b.palabra));
+            break;
+        case 'nombre-desc':
+            palabrasOrdenadas.sort((a, b) => b.palabra.localeCompare(a.palabra));
+            break;
+        case 'fecha-asc':
+            palabrasOrdenadas.sort((a, b) => a.id - b.id);
+            break;
+        case 'fecha-desc':
+            palabrasOrdenadas.sort((a, b) => b.id - a.id);
+            break;
+    }
+    
+    listaPalabras.innerHTML = palabrasOrdenadas.map(palabra => `
+        <div class="palabra-item">
+            <span><strong>${palabra.palabra}</strong></span>
+            <div>
+                <button class="edit-btn" onclick="editarPalabra(${palabra.id}, '${palabra.palabra}')">
+                    Editar
+                </button>
+                <button class="delete-btn" onclick="eliminarPalabra(${palabra.id})">
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Función para filtrar palabras
+function filtrarPalabras(texto) {
+    const filtro = texto.toLowerCase().trim();
+    const listaPalabras = document.getElementById('listaPalabras');
+    
+    // If filter is empty, restore the full list by calling ordenarPalabras
+    if (!filtro) {
+        ordenarPalabras(ordenActual);
+        return;
+    }
+    
+    const palabrasFiltradas = palabrasOriginales.filter(p => 
+        p.palabra.toLowerCase().includes(filtro)
+    );
+    
+    if (palabrasFiltradas.length === 0) {
+        listaPalabras.innerHTML = '<p style="text-align: center; color: #666;">No se encontraron palabras</p>';
+        return;
+    }
+    
+    listaPalabras.innerHTML = palabrasFiltradas.map(palabra => `
+        <div class="palabra-item">
+            <span><strong>${palabra.palabra}</strong></span>
+            <div>
+                <button class="edit-btn" onclick="editarPalabra(${palabra.id}, '${palabra.palabra}')">
+                    Editar
+                </button>
+                <button class="delete-btn" onclick="eliminarPalabra(${palabra.id})">
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
 // Función para mostrar mensajes al usuario
 function mostrarMensaje(texto, tipo) {
     const mensajeDiv = document.getElementById('mensaje');
@@ -127,6 +256,15 @@ if (typeof module !== 'undefined' && module.exports) {
     cargarPalabras,
     agregarPalabra,
     eliminarPalabra,
-    mostrarMensaje
+    editarPalabra,
+    ordenarPalabras,
+    filtrarPalabras,
+    mostrarMensaje,
+    cerrarSesion,
+    // Export variables for testing
+    get palabrasOriginales() { return palabrasOriginales; },
+    set palabrasOriginales(value) { palabrasOriginales = value; },
+    get ordenActual() { return ordenActual; },
+    set ordenActual(value) { ordenActual = value; }
   };
 }

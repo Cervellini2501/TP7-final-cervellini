@@ -77,6 +77,7 @@ describe('Frontend - Gestión de Palabras', () => {
       const listaPalabras = document.getElementById('listaPalabras');
       expect(listaPalabras.innerHTML).toContain('casa');
       expect(listaPalabras.innerHTML).toContain('perro');
+      console.log(fetch.mock.calls);
     });
 
     test('debería mostrar mensaje cuando no hay palabras', async () => {

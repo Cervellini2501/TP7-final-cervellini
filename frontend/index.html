@@ -32,6 +32,66 @@
             margin-bottom: 30px;
         }
         
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logout-btn {
+            background-color: #dc3545;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+        
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+        
+        .edit-btn {
+            background-color: #28a745;
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+        
+        .edit-btn:hover {
+            background-color: #218838;
+        }
+        
+        .palabra-item div {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-input {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            background-color: white;
+            cursor: pointer;
+        }
+        
         .form-group {
             margin-bottom: 20px;
         }
@@ -108,11 +168,28 @@
 </head>
 <body>
     <div class="container">
-        <h1>Gestión de Palabras</h1>
+        <div class="header">
+            <h1>Gestión de Palabras</h1>
+            <div class="user-info">
+                <span id="usuarioActual"></span>
+                <button class="logout-btn" onclick="cerrarSesion()">Cerrar Sesión</button>
+            </div>
+        </div>
         
         <div class="form-group">
             <input type="text" id="palabraInput" placeholder="Escribe una palabra..." />
             <button onclick="agregarPalabra()">Agregar</button>
+        </div>
+        
+        <div class="controls">
+            <input type="text" id="filtroInput" class="filter-input" placeholder="Filtrar palabras..." 
+                   onkeyup="filtrarPalabras(this.value)" />
+            <select id="ordenSelect" onchange="ordenarPalabras(this.value)">
+                <option value="fecha-desc">Más recientes</option>
+                <option value="fecha-asc">Más antiguas</option>
+                <option value="nombre-asc">A-Z</option>
+                <option value="nombre-desc">Z-A</option>
+            </select>
         </div>
         
         <div id="mensaje"></div>
