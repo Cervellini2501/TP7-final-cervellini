@@ -73,7 +73,7 @@ describe('Frontend - Gestión de Palabras', () => {
       await appFunctions.cargarPalabras();
 
       // ASSERT
-      expect(fetch).toHaveBeenCalledWith('http://localhost/api/palabras');
+      expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/palabras');
       const listaPalabras = document.getElementById('listaPalabras');
       expect(listaPalabras.innerHTML).toContain('casa');
       expect(listaPalabras.innerHTML).toContain('perro');
@@ -120,7 +120,7 @@ describe('Frontend - Gestión de Palabras', () => {
 
       // ASSERT
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost/api/palabras',
+        'http://localhost:3000/api/palabras',
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -179,7 +179,7 @@ describe('Frontend - Gestión de Palabras', () => {
       // ASSERT
       expect(window.confirm).toHaveBeenCalled();
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost/api/palabras/1',
+        'http://localhost:3000/api/palabras/1',
         expect.objectContaining({ method: 'DELETE' })
       );
     });

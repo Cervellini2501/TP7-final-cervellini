@@ -82,7 +82,7 @@ describe('Funcionalidades de Login y Registro', () => {
       const mensajeDiv = document.getElementById('mensaje');
       expect(mensajeDiv.style.display).toBe('block');
 
-      jest.advanceTimersByTime(3000);
+      jest.advanceTimersByTime(5000);
       expect(mensajeDiv.style.display).toBe('none');
     });
   });
