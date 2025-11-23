@@ -1,9 +1,16 @@
-   describe('Agregar palabra', () => {
+describe('Agregar palabra', () => {
    it('Agrega una palabra correctamente', () => {
-     cy.visit('palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net') // Colocar la url local o de Azure de nuestro front
-     cy.get('title').should('contain', 'Palabras') // Verifica que el título contenga 'Palabras'
-     cy.get('#palabraInput').click();
-     cy.get('#palabraInput').type('bauti');
-     cy.get('div.form-group button').click();
-   })
- })
+      cy.visit('http://localhost:8080'); // Colocar la url local o de Azure de nuestro front
+      cy.get('#loginUsername').click();
+      cy.get('#loginUsername').type('prueba');
+      cy.get('#loginPassword').click();
+      cy.get('#loginPassword').type('prueba');
+      cy.get('#loginForm button').click();
+      cy.get('#palabraInput').click();
+      cy.get('#palabraInput').type('bauti');
+      cy.get('div.form-group button').click();
+
+      // Verifica que la palabra se haya agregado a la lista
+      cy.get('.palabra-item').should('contain', 'bauti'); // Asegúrate de que el selector sea correcto
+   });
+});

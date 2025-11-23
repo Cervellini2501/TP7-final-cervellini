@@ -1,6 +1,11 @@
 describe('Confirmación de borrado aceptada', () => {
   it('Elimina la palabra si el usuario confirma', () => {
-    cy.visit('palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net');
+    cy.visit('http://localhost:8080'); // Colocar la url local o de Azure de nuestro front
+      cy.get('#loginUsername').click();
+      cy.get('#loginUsername').type('prueba');
+      cy.get('#loginPassword').click();
+      cy.get('#loginPassword').type('prueba');
+      cy.get('#loginForm button').click();
 
     // Esperar a que el contenedor de palabras exista y un pequeño buffer antes de contar
     cy.get('#listaPalabras', { timeout: 10000 }).should('exist');
@@ -12,17 +17,17 @@ describe('Confirmación de borrado aceptada', () => {
     });
 
     // Contar cuántas palabras hay antes
-    cy.get('#listaPalabras div').then(($itemsBefore) => {
+    cy.get('#listaPalabras .palabra-item').then(($itemsBefore) => {
       const cantidadAntes = $itemsBefore.length;
 
       // Disparar el clic en el botón de borrar
-      cy.get('#listaPalabras div:nth-child(1) > button.delete-btn').click();
+      cy.get('#listaPalabras .palabra-item:first-child .delete-btn', { timeout: 5000 }).click();
 
       // Verificar que se llamó a confirm
       cy.get('@confirmSpy').should('have.been.calledOnce');
 
       // Verificar que la cantidad de palabras disminuyó en 1
-      cy.get('#listaPalabras div').should('have.length', cantidadAntes - 1);
+      cy.get('#listaPalabras .palabra-item').should('have.length', cantidadAntes - 1);
     });
   });
 });

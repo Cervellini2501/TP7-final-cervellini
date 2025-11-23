@@ -25,7 +25,7 @@ function mostrarMensaje(texto, tipo) {
     
     setTimeout(() => {
         mensajeDiv.style.display = 'none';
-    }, 3000);
+    }, 5000);
 }
 
 // Función para registrar usuario

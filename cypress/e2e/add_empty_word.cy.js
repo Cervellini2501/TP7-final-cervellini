@@ -1,6 +1,11 @@
 describe('Validación de palabra vacía', () => {
   it('No agrega palabra si el input está vacío', () => {
-    cy.visit('palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net');
+    cy.visit('http://localhost:8080'); // Colocar la url local o de Azure de nuestro front
+      cy.get('#loginUsername').click();
+      cy.get('#loginUsername').type('prueba');
+      cy.get('#loginPassword').click();
+      cy.get('#loginPassword').type('prueba');
+      cy.get('#loginForm button').click();
 
     // Esperar a que el contenedor de palabras exista y un pequeño buffer antes de contar
     cy.get('#listaPalabras', { timeout: 10000 }).should('exist');
