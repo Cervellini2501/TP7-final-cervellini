@@ -213,9 +213,9 @@ stages:
           inputs:
             SourceFolder: 'frontend'
             Contents: |
-              index.html
-              app.js
-              styles.css
+              *.html
+              *.js
+              *.css
             TargetFolder: 'backend/frontend'
             OverWrite: true
 
@@ -298,7 +298,7 @@ stages:
                   appName: '$(webAppNameQA)'
                   package: '$(System.ArtifactsDirectory)/drop/$(Build.BuildId).zip'
                   runtimeStack: 'NODE|20-lts'
-                  startUpCommand: 'node index.js'
+                  startUpCommand: 'NODE_ENV=production node index.js'
 
               - script: |
                   echo "Waiting for health endpoint to respond..."
@@ -422,7 +422,7 @@ stages:
                   appName: "$(webAppNamePROD)"
                   package: "$(Pipeline.Workspace)/drop"
                   runtimeStack: 'NODE|20-lts'
-                  startUpCommand: 'node index.js'
+                  startUpCommand: 'NODE_ENV=production node index.js'
 
               - script: |
                   echo "⏳ Esperando 30 segundos..."

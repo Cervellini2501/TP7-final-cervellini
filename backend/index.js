@@ -17,7 +17,12 @@ app.use(cors());
 app.use(express.json());
 
 // Servir archivos estáticos del frontend
-app.use(express.static(path.join(__dirname, '..', 'frontend')));
+// En producción (Azure), los archivos están en backend/frontend
+// En desarrollo, están en ../frontend
+const frontendPath = process.env.NODE_ENV === 'production' 
+  ? path.join(__dirname, 'frontend')
+  : path.join(__dirname, '..', 'frontend');
+app.use(express.static(frontendPath));
 
 // Importar la base de datos
 const db = require('./db');
@@ -169,7 +174,7 @@ app.get('/health', (req, res) => {
 
 // Catch-all
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'frontend', 'login.html'));
+  res.sendFile(path.join(frontendPath, 'login.html'));
 });
 
 // ✅ EXPORTAR LA APP (para tests)
@@ -181,7 +186,7 @@ if (require.main === module) {
     console.log('════════════════════════════════════════');
     console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
     console.log(`📍 Environment: ${ENV_NAME} (NODE_ENV: ${NODE_ENV})`);
-    console.log(`📁 Serving frontend from: ${path.join(__dirname, 'frontend')}`);
+    console.log(`📁 Serving frontend from: ${frontendPath}`);
     console.log(`🌐 Listening on 0.0.0.0:${PORT}`);
     console.log('════════════════════════════════════════');
   });
