@@ -1,6 +1,6 @@
 describe('Confirmación de borrado aceptada', () => {
   it('Elimina la palabra si el usuario confirma', () => {
-    cy.visit('http://localhost:8080'); // Colocar la url local o de Azure de nuestro front
+    cy.visit('https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net'); // Colocar la url local o de Azure de nuestro front
       cy.get('#loginUsername').click();
       cy.get('#loginUsername').type('prueba');
       cy.get('#loginPassword').click();

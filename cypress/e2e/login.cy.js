@@ -1,7 +1,7 @@
 describe('Login de usuario', () => {
   it('Permite ingresar con credenciales correctas', () => {
     cy.intercept('POST', '/api/login').as('loginUser'); // Intercepta la solicitud de login
-    cy.visit('http://localhost:8080'); // Colocar la url local o de Azure de nuestro front
+    cy.visit('https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net'); // Colocar la url local o de Azure de nuestro front
     cy.get('#loginUsername').click();
     cy.get('#loginUsername').type('prueba'); // Credenciales correctas
     cy.get('#loginPassword').click();
@@ -18,7 +18,7 @@ describe('Login de usuario', () => {
 
   it('No permite ingresar con credenciales incorrectas', () => {
     cy.intercept('POST', '/api/login').as('loginUser'); // Intercepta la solicitud de login
-    cy.visit('http://localhost:8080');
+    cy.visit('https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net');
     cy.get('#loginUsername').click();
     cy.get('#loginUsername').type('usuarioInvalido'); // Credenciales incorrectas
     cy.get('#loginPassword').click();
