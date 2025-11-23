@@ -1,6 +1,6 @@
 describe('Validación de palabra vacía', () => {
   it('No agrega palabra si el input está vacío', () => {
-    cy.visit('https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net'); // Colocar la url local o de Azure de nuestro front
+    cy.visit('/'); // Usa baseUrl del config
       cy.get('#loginUsername').click();
       cy.get('#loginUsername').type('prueba');
       cy.get('#loginPassword').click();

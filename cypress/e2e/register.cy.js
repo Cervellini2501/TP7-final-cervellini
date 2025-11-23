@@ -2,7 +2,7 @@ describe('Agregar palabra', () => {
   it('Registra usuario correctamente', () => {
     const uniqueUsername = `testprueba_${Date.now()}`; // Genera un nombre único con timestamp
     cy.intercept('POST', '/api/register').as('registerUser'); // Intercepta la solicitud de registro
-    cy.visit('https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net'); // Colocar la url local o de Azure de nuestro front
+    cy.visit('/'); // Usa baseUrl del config
     cy.get('title').should('contain', 'Palabras'); // Verifica que el título contenga 'Palabras'
     cy.get('#registerUsername').click();
     cy.get('#registerUsername').type(uniqueUsername); // Usa el nombre único
@@ -20,7 +20,7 @@ describe('Agregar palabra', () => {
   it('No permite registrar un usuario ya existente', () => {
     const existingUsername = 'prueba'; // Usa un nombre que ya esté en la BD
     cy.intercept('POST', '/api/register').as('registerUser'); // Intercepta la solicitud de registro
-    cy.visit('https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net'); // Colocar la url local o de Azure de nuestro front
+    cy.visit('/'); // Usa baseUrl del config
     cy.get('title').should('contain', 'Palabras');
     cy.get('#registerUsername').click();
     cy.get('#registerUsername').type(existingUsername);
