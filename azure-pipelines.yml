@@ -395,10 +395,13 @@ stages:
         runOnce:
           deploy:
             steps:
-              - checkout: self
-              
-              - download: current
-                artifact: drop
+              - task: DownloadBuildArtifacts@1
+                displayName: 'Download Artifacts'
+                inputs:
+                  buildType: 'current'
+                  downloadType: 'single'
+                  artifactName: 'drop'
+                  downloadPath: '$(System.ArtifactsDirectory)'
 
               # Configurar variables de entorno
               - task: AzureAppServiceSettings@1
@@ -420,14 +423,25 @@ stages:
                   azureSubscription: "$(azureSubscription)"
                   appType: 'webAppLinux'
                   appName: "$(webAppNamePROD)"
-                  package: "$(Pipeline.Workspace)/drop"
+                  package: '$(System.ArtifactsDirectory)/drop/$(Build.BuildId).zip'
                   runtimeStack: 'NODE|20-lts'
                   startUpCommand: 'NODE_ENV=production node index.js'
 
               - script: |
-                  echo "⏳ Esperando 30 segundos..."
-                  sleep 30
-                  echo "🔍 Verificando PROD: $(ENVIRONMENT_NAME)"
-                  curl -f https://palabras-prod-amgufubhacevetcn.brazilsouth-01.azurewebsites.net/health || echo "⚠️ Health check pending"
-                displayName: "Health Check PROD"
-                continueOnError: true
+                  echo "Waiting for health endpoint to respond..."
+                  url="https://palabras-prod-amgufubhacevetcn.brazilsouth-01.azurewebsites.net/health"
+                  timeout=120
+                  interval=5
+                  elapsed=0
+                  until curl -sSf "$url" > /dev/null; do
+                    sleep $interval
+                    elapsed=$((elapsed + interval))
+                    echo "Waiting... ${elapsed}s elapsed"
+                    if [ $elapsed -ge $timeout ]; then
+                      echo "Health check timed out after ${timeout}s"
+                      exit 1
+                    fi
+                  done
+                  echo "✅ Health endpoint is OK: $url"
+                displayName: 'Wait for /health (PROD)'
+                condition: succeeded()
