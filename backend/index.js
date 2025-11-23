@@ -98,9 +98,9 @@ app.post('/api/palabras', (req, res) => {
   const { palabra } = req.body;
   console.log('📥 POST /api/palabras ->', palabra);
   
-  if (!palabra) {
-    return res.status(400).json({ error: 'La palabra es requerida' });
-  }
+  //if (!palabra) {
+  //  return res.status(400).json({ error: 'La palabra es requerida' });
+  //}
   
   db.run('INSERT INTO palabras (palabra) VALUES (?)', [palabra], function(err) {
     if (err) {
