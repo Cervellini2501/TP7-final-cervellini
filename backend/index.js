@@ -122,9 +122,9 @@ app.put('/api/palabras/:id', (req, res) => {
   const { palabra } = req.body;
   console.log('📥 PUT /api/palabras/' + id, '->', palabra);
   
-  if (!palabra) {
-    return res.status(400).json({ error: 'La palabra es requerida' });
-  }
+ //if (!palabra) {
+  //  return res.status(400).json({ error: 'La palabra es requerida' });
+  //}
   
   db.run('UPDATE palabras SET palabra = ? WHERE id = ?', [palabra, id], function(err) {
     if (err) {
