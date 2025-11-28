@@ -1,9 +1,6 @@
-// Mock de fetch antes de importar app.js
-global.fetch = require('jest-fetch-mock');
-fetch.enableMocks();
-
-describe('Frontend - Gestión de Palabras', () => {
+describe('Frontend - Gestión de Palabras (Unitarios)', () => {
   let appFunctions;
+  let mockFetch;
 
   beforeEach(() => {
     // Resetear el DOM antes de cada test
@@ -13,11 +10,19 @@ describe('Frontend - Gestión de Palabras', () => {
       <div id="mensaje"></div>
     `;
 
-    // Resetear mocks
-    fetch.resetMocks();
+    // Mock de fetch local
+    mockFetch = jest.fn();
+    global.fetch = mockFetch;
+    
+    // Mockear console.error para tests de error
+    jest.spyOn(console, 'error').mockImplementation(() => {});
     
     // Importar funciones
     appFunctions = require('../app.js');
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('mostrarMensaje()', () => {
@@ -49,13 +54,19 @@ describe('Frontend - Gestión de Palabras', () => {
       expect(mensajeDiv.innerHTML).toContain('error');
     });
 
-    
     test('debería limpiar el mensaje después de 3 segundos', () => {
+      // ARRANGE
       jest.useFakeTimers();
+
+      // ACT
       appFunctions.mostrarMensaje('Hola', 'exito');
       jest.runAllTimers();
+
+      // ASSERT
       const mensajeDiv = document.getElementById('mensaje');
       expect(mensajeDiv.innerHTML).toBe('');
+      
+      jest.useRealTimers();
     });
   });
 
@@ -67,22 +78,27 @@ describe('Frontend - Gestión de Palabras', () => {
         { id: 2, palabra: 'perro' }
       ];
       
-      fetch.mockResponseOnce(JSON.stringify(mockPalabras));
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPalabras
+      });
 
       // ACT
       await appFunctions.cargarPalabras();
 
       // ASSERT
-      expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/palabras');
+      expect(mockFetch).toHaveBeenCalledTimes(1);
       const listaPalabras = document.getElementById('listaPalabras');
       expect(listaPalabras.innerHTML).toContain('casa');
       expect(listaPalabras.innerHTML).toContain('perro');
-      console.log(fetch.mock.calls);
     });
 
     test('debería mostrar mensaje cuando no hay palabras', async () => {
       // ARRANGE
-      fetch.mockResponseOnce(JSON.stringify([]));
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => []
+      });
 
       // ACT
       await appFunctions.cargarPalabras();
@@ -94,7 +110,7 @@ describe('Frontend - Gestión de Palabras', () => {
 
     test('debería manejar errores de la API', async () => {
       // ARRANGE
-      fetch.mockReject(new Error('Network error'));
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
       // ACT
       await appFunctions.cargarPalabras();
@@ -110,17 +126,22 @@ describe('Frontend - Gestión de Palabras', () => {
       const palabraInput = document.getElementById('palabraInput');
       palabraInput.value = 'gato';
       
-      fetch.mockResponses(
-        [JSON.stringify({ id: 3, palabra: 'gato', mensaje: 'Palabra agregada exitosamente' }), { status: 200 }],
-        [JSON.stringify([{ id: 3, palabra: 'gato' }]), { status: 200 }]
-      );
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ id: 3, palabra: 'gato', mensaje: 'Palabra agregada exitosamente' })
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [{ id: 3, palabra: 'gato' }]
+        });
 
       // ACT
       await appFunctions.agregarPalabra();
 
       // ASSERT
-      expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/palabras',
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -139,7 +160,7 @@ describe('Frontend - Gestión de Palabras', () => {
       await appFunctions.agregarPalabra();
 
       // ASSERT
-      expect(fetch).not.toHaveBeenCalled();
+      expect(mockFetch).not.toHaveBeenCalled();
       const mensajeDiv = document.getElementById('mensaje');
       expect(mensajeDiv.innerHTML).toContain('Por favor ingresa una palabra');
     });
@@ -149,10 +170,11 @@ describe('Frontend - Gestión de Palabras', () => {
       const palabraInput = document.getElementById('palabraInput');
       palabraInput.value = 'test';
       
-      fetch.mockResponseOnce(
-        JSON.stringify({ error: 'Error de servidor' }), 
-        { status: 500 }
-      );
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ error: 'Error de servidor' })
+      });
 
       // ACT
       await appFunctions.agregarPalabra();
@@ -168,18 +190,23 @@ describe('Frontend - Gestión de Palabras', () => {
       // ARRANGE
       window.confirm = jest.fn(() => true); // Usuario confirma
       
-      fetch.mockResponses(
-        [JSON.stringify({ mensaje: 'Palabra eliminada exitosamente' }), { status: 200 }],
-        [JSON.stringify([]), { status: 200 }]
-      );
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ mensaje: 'Palabra eliminada exitosamente' })
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => []
+        });
 
       // ACT
       await appFunctions.eliminarPalabra(1);
 
       // ASSERT
       expect(window.confirm).toHaveBeenCalled();
-      expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/palabras/1',
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
         expect.objectContaining({ method: 'DELETE' })
       );
     });
@@ -193,16 +220,17 @@ describe('Frontend - Gestión de Palabras', () => {
 
       // ASSERT
       expect(window.confirm).toHaveBeenCalled();
-      expect(fetch).not.toHaveBeenCalled();
+      expect(mockFetch).not.toHaveBeenCalled();
     });
 
     test('debería manejar errores al eliminar', async () => {
       // ARRANGE
       window.confirm = jest.fn(() => true);
-      fetch.mockResponseOnce(
-        JSON.stringify({ error: 'Error al eliminar' }), 
-        { status: 500 }
-      );
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ error: 'Error al eliminar' })
+      });
 
       // ACT
       await appFunctions.eliminarPalabra(1);

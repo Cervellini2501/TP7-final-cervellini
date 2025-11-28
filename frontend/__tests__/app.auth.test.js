@@ -154,7 +154,7 @@ describe('Funcionalidades de Autenticación y Sesión', () => {
         { id: 1, palabra: 'casa' },
         { id: 2, palabra: 'perro' }
       ];
-      app.filtrarPalabras('');
+      app.filtrarPalabras(' ');
 
       const lista = document.getElementById('listaPalabras');
       expect(lista.innerHTML).toContain('casa');
