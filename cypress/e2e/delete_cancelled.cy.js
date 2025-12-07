@@ -7,7 +7,10 @@ describe('Cancelación de borrado', () => {
     cy.get('#palabraInput').clear().type(palabra);
     cy.contains('button', 'Agregar').click();
 
-    cy.contains('#listaPalabras .palabra-item', palabra, { timeout: 15000 }).should('exist');
+    // Esperar confirmación visual antes de buscar en la lista (latencia QA)
+    cy.contains('.mensaje', 'exitosamente', { timeout: 15000 }).should('exist');
+
+    cy.contains('#listaPalabras .palabra-item', palabra, { timeout: 20000 }).should('exist');
 
     cy.window().then((win) => {
       cy.stub(win, 'confirm').returns(false).as('confirmSpy');

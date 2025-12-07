@@ -9,7 +9,12 @@ describe('Confirmación de borrado aceptada', () => {
     cy.contains('button', 'Agregar').click();
 
     // Esperar que aparezca
-    cy.contains('#listaPalabras .palabra-item', palabra, { timeout: 15000 }).should('exist');
+      // Esperar confirmación visual antes de buscar en la lista (latencia QA)
+      cy.contains('.mensaje', 'exitosamente', { timeout: 15000 }).should('exist');
+
+      // 3) Verificar que la palabra aparece en la lista
+      cy.contains('#listaPalabras .palabra-item', palabra, { timeout: 20000 })
+        .should('exist');
 
     // Stub confirm en true
     cy.window().then((win) => {
