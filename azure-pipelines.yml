@@ -8,10 +8,20 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  nodeVersion: '20.x'  
-  azureSubscription: 'azure-palabras-connection' 
-  webAppNameQA: 'palabras-qa' 
-  webAppNamePROD: 'palabras-prod' 
+  # Variables compartidas (incluye SONAR_ORG, SONAR_PROJECT_KEY, SONAR_TOKEN)
+  - group: TP7-Variables
+
+  - name: nodeVersion
+    value: '20.x'
+
+  - name: azureSubscription
+    value: 'azure-palabras-connection'
+
+  - name: webAppNameQA
+    value: 'palabras-qa'
+
+  - name: webAppNamePROD
+    value: 'palabras-prod'
 
 # =======================================
 # STAGE 1: Build and Test Backend + Frontend
@@ -186,15 +196,32 @@ stages:
           displayName: "Frontend - Verify Coverage Threshold"
           condition: succeededOrFailed()
 
-        - task: SonarCloudPrepare@3
-          inputs:
-            SonarQube: 'sonar-cloud-connection'
-            organization: 'sofiaoliveto'
-            scannerMode: 'cli'
-            configMode: 'file'
-            cliProjectKey: 'sofiaoliveto_TP7'
-            cliProjectName: 'TP7'
-            cliSources: '.'
+        # ===============================================
+        # SONARCLOUD - usando sonar-scanner CLI (config TP7 original)
+        # ===============================================
+        - script: |
+            set -e
+
+            echo "════════════════════════════════════════"
+            echo "  SONARCLOUD: Downloading SonarScanner CLI"
+            echo "════════════════════════════════════════"
+            curl -sSLo sonar-scanner.zip \
+              https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+
+            echo "Descomprimiendo SonarScanner..."
+            unzip -q sonar-scanner.zip
+
+            # Añadimos el binario al PATH
+            export PATH="$PATH:$(pwd)/sonar-scanner-5.0.1.3006-linux/bin"
+
+            echo "Ejecutando análisis SonarCloud..."
+            sonar-scanner \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.organization=$(SONAR_ORG) \
+              -Dsonar.projectKey=$(SONAR_PROJECT_KEY) \
+              -Dsonar.token=$(SONAR_TOKEN) \
+              -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info,frontend/coverage/lcov.info
+          displayName: 'SonarCloud - análisis'
 
         # ===============================================
         # BUILD Y PREPARAR ARTEFACTOS
@@ -218,14 +245,6 @@ stages:
               styles.css
             TargetFolder: 'backend/frontend'
             OverWrite: true
-
-        - task: SonarCloudAnalyze@3
-          inputs:
-            jdkversion: 'JAVA_HOME_17_X64'
-
-        - task: SonarCloudPublish@3
-          inputs:
-            pollingTimeoutSec: '300'
 
         # ARCHIVE APPLICATION FILES
         - task: ArchiveFiles@2
@@ -257,10 +276,10 @@ stages:
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   variables:
   - group: QA-Variables
+  jobs:
     #
     # JOB 1: Deploy to Azure QA
     #
-  jobs:
     - deployment: DeployToAzureQA
       displayName: 'Deploy to QA'
       environment: 'QA'
