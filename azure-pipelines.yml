@@ -371,6 +371,20 @@ stages:
             npx cypress install || true
           displayName: 'Install Cypress + project deps'
 
+        # Asegurar que el WebApp QA esté iniciado antes de los tests (evita 403: Web App stopped)
+        - task: AzureCLI@2
+          displayName: 'Start QA WebApp (if stopped)'
+          inputs:
+            azureSubscription: '$(azureSubscription)'
+            scriptType: 'bash'
+            scriptLocation: 'inlineScript'
+            inlineScript: |
+              set -e
+              echo "🔄 Starting QA webapp if needed..."
+              az webapp start --name $(webAppNameQA) --resource-group palabras-qa-rg || true
+              echo "ℹ️ Current state:"
+              az webapp show --name $(webAppNameQA) --resource-group palabras-qa-rg --query state -o tsv
+
         - script: |
             echo "🌐 Esperando a que la app QA esté online..."
             URL="https://$(webAppNameQA).azurewebsites.net"
