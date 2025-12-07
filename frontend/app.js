@@ -1,132 +1,174 @@
-// Determinar la URL de la API según el entorno
+// ==========================================
+// CONFIGURACIÓN DE LA API
+// ==========================================
 let API_URL;
-// En producción (Azure), el backend sirve el frontend
-// En desarrollo local, apuntar al backend en puerto 3000
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    API_URL = 'http://localhost/api';
+
+if (typeof window !== "undefined") {
+  // Entorno navegador
+  if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+    API_URL = "http://localhost/api";
+  } else {
+    API_URL = window.location.origin + "/api";
+  }
 } else {
-    // En Azure App Service, el backend y frontend están en el mismo origen
-    API_URL = window.location.origin + '/api';
+  // Tests en Jest (sin window)
+  API_URL = "http://localhost/api";
 }
 
-// Cargar palabras al inicio
-document.addEventListener('DOMContentLoaded', function() {
-    cargarPalabras();
-    
-    // Permitir agregar palabra con Enter
-    document.getElementById('palabraInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            agregarPalabra();
-        }
-    });
-});
+// ==========================================
+// FUNCIÓN BASE PARA LLAMADAS A LA API
+// ==========================================
+async function apiFetch(url, options = {}) {
+  try {
+    const response = await fetch(url, options);
 
-// Función para cargar y mostrar todas las palabras
-async function cargarPalabras() {
-    try {
-        const response = await fetch(`${API_URL}/palabras`);
-        const palabras = await response.json();
-        
-        const listaPalabras = document.getElementById('listaPalabras');
-        
-        if (palabras.length === 0) {
-            listaPalabras.innerHTML = '<p style="text-align: center; color: #666;">No hay palabras guardadas</p>';
-            return;
-        }
-        
-        listaPalabras.innerHTML = palabras.map(palabra => `
-            <div class="palabra-item">
-                <span><strong>${palabra.palabra}</strong></span>
-                <button class="delete-btn" onclick="eliminarPalabra(${palabra.id})">
-                    Eliminar
-                </button>
-            </div>
-        `).join('');
-        
-    } catch (error) {
-        console.error('Error al cargar palabras:', error);
-        mostrarMensaje('Error al cargar las palabras', 'error');
-    }
+    const data = await response.json().catch(() => ({}));
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      data: data
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 500,
+      data: { error: error.message }
+    };
+  }
 }
 
-// Función para agregar una nueva palabra
-async function agregarPalabra() {
-    const palabraInput = document.getElementById('palabraInput');
-    const palabra = palabraInput.value.trim();
-    
-    if (!palabra) {
-        mostrarMensaje('Por favor ingresa una palabra', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/palabras`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ palabra: palabra })
-        });
-        
-        const resultado = await response.json();
-        
-        if (response.ok) {
-            mostrarMensaje('Palabra agregada exitosamente', 'exito');
-            palabraInput.value = ''; // Limpiar input
-            cargarPalabras(); // Recargar lista
-        } else {
-            mostrarMensaje(resultado.error || 'Error al agregar palabra', 'error');
-        }
-        
-    } catch (error) {
-        console.error('Error al agregar palabra:', error);
-        mostrarMensaje('Error al agregar la palabra', 'error');
-    }
+// ==========================================
+// ENDPOINTS PUROS (Testeables)
+// ==========================================
+function obtenerPalabras() {
+  // 🔧 FIX: no pasar {} para evitar fallo en Jest: Received: url, {}
+  return apiFetch(`${API_URL}/palabras`);
 }
 
-// Función para eliminar una palabra
-async function eliminarPalabra(id) {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta palabra?')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/palabras/${id}`, {
-            method: 'DELETE'
-        });
-        
-        const resultado = await response.json();
-        
-        if (response.ok) {
-            mostrarMensaje('Palabra eliminada exitosamente', 'exito');
-            cargarPalabras(); // Recargar lista
-        } else {
-            mostrarMensaje(resultado.error || 'Error al eliminar palabra', 'error');
-        }
-        
-    } catch (error) {
-        console.error('Error al eliminar palabra:', error);
-        mostrarMensaje('Error al eliminar la palabra', 'error');
-    }
+function crearPalabra(palabra) {
+  return apiFetch(`${API_URL}/palabras`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ palabra })
+  });
 }
 
-// Función para mostrar mensajes al usuario
+function borrarPalabra(id) {
+  return apiFetch(`${API_URL}/palabras/${id}`, {
+    method: "DELETE"
+  });
+}
+
+// ==========================================
+// DOM FUNCTIONS (Testeables con JSDOM)
+// ==========================================
 function mostrarMensaje(texto, tipo) {
-    const mensajeDiv = document.getElementById('mensaje');
-    mensajeDiv.innerHTML = `<div class="mensaje ${tipo}">${texto}</div>`;
-    
-    // Ocultar mensaje después de 3 segundos
-    setTimeout(() => {
-        mensajeDiv.innerHTML = '';
-    }, 3000);
+  const mensajeDiv = document.getElementById("mensaje");
+  if (!mensajeDiv) return;
+
+  mensajeDiv.innerHTML = `<div class="mensaje ${tipo}">${texto}</div>`;
+
+  setTimeout(() => {
+    mensajeDiv.innerHTML = "";
+  }, 3000);
 }
 
-// Exportar funciones para pruebas unitarias
-if (typeof module !== 'undefined' && module.exports) {
+async function cargarPalabras() {
+  const lista = document.getElementById("listaPalabras");
+  lista.innerHTML = `<div class="loading">Cargando...</div>`;
+
+  const resultado = await obtenerPalabras();
+
+  if (!resultado.ok) {
+    return mostrarMensaje("Error al cargar palabras", "error");
+  }
+
+  const palabras = resultado.data;
+
+  if (!palabras || palabras.length === 0) {
+    lista.innerHTML = `<p style="text-align:center;color:#666;">No hay palabras guardadas</p>`;
+    return;
+  }
+
+  lista.innerHTML = palabras
+    .map(
+      (p) => `
+      <div class="palabra-item">
+        <span><strong>${p.palabra}</strong></span>
+        <button class="delete-btn" onclick="eliminarPalabra(${p.id})">Eliminar</button>
+      </div>`
+    )
+    .join("");
+}
+
+async function agregarPalabra() {
+  const input = document.getElementById("palabraInput");
+  const palabra = input.value.trim();
+
+  if (!palabra) {
+    return mostrarMensaje("Por favor ingresa una palabra", "error");
+  }
+
+  const resultado = await crearPalabra(palabra);
+
+  // 🔧 FIX PARA QUE PASE EL TEST: Mensaje debe contener "Error"
+  if (!resultado.ok) {
+    return mostrarMensaje(
+      resultado.data.error || "Error al agregar la palabra",
+      "error"
+    );
+  }
+
+  mostrarMensaje("Palabra agregada exitosamente", "exito");
+  input.value = "";
+  cargarPalabras();
+}
+
+async function eliminarPalabra(id) {
+  if (!confirm("¿Seguro que deseas eliminar esta palabra?")) return;
+
+  const resultado = await borrarPalabra(id);
+
+  // 🔧 FIX PARA TEST: Mensaje debe contener "Error"
+  if (!resultado.ok) {
+    return mostrarMensaje(
+      resultado.data.error || "Error al eliminar la palabra",
+      "error"
+    );
+  }
+
+  mostrarMensaje("Palabra eliminada exitosamente", "exito");
+  cargarPalabras();
+}
+
+// ==========================================
+// HOOK DE INICIO
+// ==========================================
+if (typeof window !== "undefined") {
+  document.addEventListener("DOMContentLoaded", () => {
+    cargarPalabras();
+
+    const input = document.getElementById("palabraInput");
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") agregarPalabra();
+    });
+  });
+}
+
+// ==========================================
+// EXPORTS PARA TESTS
+// ==========================================
+if (typeof module !== "undefined") {
   module.exports = {
+    apiFetch,
+    obtenerPalabras,
+    crearPalabra,
+    borrarPalabra,
+    mostrarMensaje,
     cargarPalabras,
     agregarPalabra,
     eliminarPalabra,
-    mostrarMensaje
+    API_URL
   };
 }

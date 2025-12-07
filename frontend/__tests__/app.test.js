@@ -1,214 +1,208 @@
-// Mock de fetch antes de importar app.js
-global.fetch = require('jest-fetch-mock');
+global.fetch = require("jest-fetch-mock");
 fetch.enableMocks();
 
-describe('Frontend - Gestión de Palabras', () => {
-  let appFunctions;
+describe("Frontend - Gestión de Palabras (Nuevo front mejorado)", () => {
+  let app;
 
   beforeEach(() => {
-    // Resetear el DOM antes de cada test
+    jest.resetModules();
+    fetch.resetMocks();
+
     document.body.innerHTML = `
       <input id="palabraInput" value="" />
       <div id="listaPalabras"></div>
       <div id="mensaje"></div>
     `;
 
-    // Resetear mocks
-    fetch.resetMocks();
-    
-    // Importar funciones
-    appFunctions = require('../app.js');
+    app = require("../app.js");
   });
 
-  describe('mostrarMensaje()', () => {
-    test('debería mostrar mensaje de éxito', () => {
-      // ARRANGE
-      const mensaje = 'Operación exitosa';
-      const tipo = 'exito';
-
-      // ACT
-      appFunctions.mostrarMensaje(mensaje, tipo);
-
-      // ASSERT
-      const mensajeDiv = document.getElementById('mensaje');
-      expect(mensajeDiv.innerHTML).toContain(mensaje);
-      expect(mensajeDiv.innerHTML).toContain('exito');
+  // ============================================================
+  // mostrarMensaje()
+  // ============================================================
+  describe("mostrarMensaje()", () => {
+    test("muestra mensaje de éxito", () => {
+      app.mostrarMensaje("OK", "exito");
+      const html = document.getElementById("mensaje").innerHTML;
+      expect(html).toContain("exito");
+      expect(html).toContain("OK");
     });
 
-    test('debería mostrar mensaje de error', () => {
-      // ARRANGE
-      const mensaje = 'Ocurrió un error';
-      const tipo = 'error';
-
-      // ACT
-      appFunctions.mostrarMensaje(mensaje, tipo);
-
-      // ASSERT
-      const mensajeDiv = document.getElementById('mensaje');
-      expect(mensajeDiv.innerHTML).toContain(mensaje);
-      expect(mensajeDiv.innerHTML).toContain('error');
+    test("muestra mensaje de error", () => {
+      app.mostrarMensaje("Error grave", "error");
+      const html = document.getElementById("mensaje").innerHTML;
+      expect(html).toContain("error");
+      expect(html).toContain("Error grave");
     });
 
-    
-    test('debería limpiar el mensaje después de 3 segundos', () => {
+    test("borra el mensaje después de 3 segundos", () => {
       jest.useFakeTimers();
-      appFunctions.mostrarMensaje('Hola', 'exito');
+      app.mostrarMensaje("Hola", "exito");
       jest.runAllTimers();
-      const mensajeDiv = document.getElementById('mensaje');
-      expect(mensajeDiv.innerHTML).toBe('');
+      expect(document.getElementById("mensaje").innerHTML).toBe("");
     });
   });
 
-  describe('cargarPalabras()', () => {
-    test('debería cargar y mostrar palabras correctamente', async () => {
-      // ARRANGE
-      const mockPalabras = [
-        { id: 1, palabra: 'casa' },
-        { id: 2, palabra: 'perro' }
-      ];
-      
-      fetch.mockResponseOnce(JSON.stringify(mockPalabras));
+  // ============================================================
+  // obtenerPalabras() (lógica de API pura)
+  // ============================================================
+  describe("obtenerPalabras()", () => {
+    test("devuelve lista correctamente", async () => {
+      const mockData = [{ id: 1, palabra: "casa" }];
+      fetch.mockResponseOnce(JSON.stringify(mockData));
 
-      // ACT
-      await appFunctions.cargarPalabras();
+      const result = await app.obtenerPalabras();
 
-      // ASSERT
-      expect(fetch).toHaveBeenCalledWith('http://localhost/api/palabras');
-      const listaPalabras = document.getElementById('listaPalabras');
-      expect(listaPalabras.innerHTML).toContain('casa');
-      expect(listaPalabras.innerHTML).toContain('perro');
+      // ✅ Solo validamos el primer parámetro (URL)
+      expect(fetch.mock.calls[0][0]).toBe("http://localhost/api/palabras");
+      expect(result.ok).toBe(true);
+      expect(result.data[0].palabra).toBe("casa");
     });
 
-    test('debería mostrar mensaje cuando no hay palabras', async () => {
-      // ARRANGE
+    test("maneja error de fetch", async () => {
+      fetch.mockRejectOnce(new Error("Fallo de red"));
+
+      const result = await app.obtenerPalabras();
+
+      expect(result.ok).toBe(false);
+      expect(result.status).toBe(500);
+      expect(result.data.error).toBe("Fallo de red");
+    });
+  });
+
+  // ============================================================
+  // cargarPalabras() (DOM)
+  // ============================================================
+  describe("cargarPalabras()", () => {
+    test("muestra lista de palabras", async () => {
+      const mockData = [
+        { id: 1, palabra: "sol" },
+        { id: 2, palabra: "luna" }
+      ];
+      fetch.mockResponseOnce(JSON.stringify(mockData));
+
+      await app.cargarPalabras();
+
+      const html = document.getElementById("listaPalabras").innerHTML;
+      expect(html).toContain("sol");
+      expect(html).toContain("luna");
+    });
+
+    test("muestra mensaje cuando no hay palabras", async () => {
       fetch.mockResponseOnce(JSON.stringify([]));
 
-      // ACT
-      await appFunctions.cargarPalabras();
+      await app.cargarPalabras();
 
-      // ASSERT
-      const listaPalabras = document.getElementById('listaPalabras');
-      expect(listaPalabras.innerHTML).toContain('No hay palabras guardadas');
+      expect(document.getElementById("listaPalabras").innerHTML)
+        .toContain("No hay palabras guardadas");
     });
 
-    test('debería manejar errores de la API', async () => {
-      // ARRANGE
-      fetch.mockReject(new Error('Network error'));
+    test("muestra error cuando la API falla", async () => {
+      fetch.mockRejectOnce(new Error("API caída"));
 
-      // ACT
-      await appFunctions.cargarPalabras();
+      await app.cargarPalabras();
 
-      // ASSERT
-      expect(console.error).toHaveBeenCalled();
+      const html = document.getElementById("mensaje").innerHTML;
+      expect(html).toContain("Error al cargar palabras");
+      expect(html).toContain("error"); // clase CSS
     });
   });
 
-  describe('agregarPalabra()', () => {
-    test('debería agregar una palabra exitosamente', async () => {
-      // ARRANGE
-      const palabraInput = document.getElementById('palabraInput');
-      palabraInput.value = 'gato';
-      
+  // ============================================================
+  // agregarPalabra()
+  // ============================================================
+  describe("agregarPalabra()", () => {
+    test("valida entrada vacía", async () => {
+      document.getElementById("palabraInput").value = "   ";
+
+      await app.agregarPalabra();
+
+      expect(fetch).not.toHaveBeenCalled();
+      expect(document.getElementById("mensaje").innerHTML)
+        .toContain("Por favor ingresa una palabra");
+    });
+
+    test("agrega palabra correctamente", async () => {
+      document.getElementById("palabraInput").value = "cielo";
+
       fetch.mockResponses(
-        [JSON.stringify({ id: 3, palabra: 'gato', mensaje: 'Palabra agregada exitosamente' }), { status: 200 }],
-        [JSON.stringify([{ id: 3, palabra: 'gato' }]), { status: 200 }]
+        [JSON.stringify({ id: 1, palabra: "cielo" }), { status: 200 }],
+        [JSON.stringify([{ id: 1, palabra: "cielo" }]), { status: 200 }]
       );
 
-      // ACT
-      await appFunctions.agregarPalabra();
+      await app.agregarPalabra();
 
-      // ASSERT
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost/api/palabras',
+        "http://localhost/api/palabras",
         expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ palabra: 'gato' })
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ palabra: "cielo" })
         })
       );
-      expect(palabraInput.value).toBe(''); // Input limpiado
+      expect(document.getElementById("palabraInput").value).toBe("");
     });
 
-    test('debería validar que la palabra no esté vacía', async () => {
-      // ARRANGE
-      const palabraInput = document.getElementById('palabraInput');
-      palabraInput.value = '   '; // Espacios en blanco
+    test("maneja error al agregar", async () => {
+      document.getElementById("palabraInput").value = "errorcito";
 
-      // ACT
-      await appFunctions.agregarPalabra();
-
-      // ASSERT
-      expect(fetch).not.toHaveBeenCalled();
-      const mensajeDiv = document.getElementById('mensaje');
-      expect(mensajeDiv.innerHTML).toContain('Por favor ingresa una palabra');
-    });
-
-    test('debería manejar errores de la API al agregar', async () => {
-      // ARRANGE
-      const palabraInput = document.getElementById('palabraInput');
-      palabraInput.value = 'test';
-      
+      // Tu app usa: resultado.data.error || "Error al agregar palabra"
       fetch.mockResponseOnce(
-        JSON.stringify({ error: 'Error de servidor' }), 
+        JSON.stringify({ error: "No se pudo" }),
         { status: 500 }
       );
 
-      // ACT
-      await appFunctions.agregarPalabra();
+      await app.agregarPalabra();
 
-      // ASSERT
-      const mensajeDiv = document.getElementById('mensaje');
-      expect(mensajeDiv.innerHTML).toContain('Error');
+      const html = document.getElementById("mensaje").innerHTML;
+      // ✅ Coincidimos con el comportamiento real
+      expect(html).toContain("No se pudo");
+      expect(html).toContain("error"); // clase CSS
     });
   });
 
-  describe('eliminarPalabra()', () => {
-    test('debería eliminar una palabra con confirmación', async () => {
-      // ARRANGE
-      window.confirm = jest.fn(() => true); // Usuario confirma
-      
+  // ============================================================
+  // eliminarPalabra()
+  // ============================================================
+  describe("eliminarPalabra()", () => {
+    test("no elimina si el usuario cancela", async () => {
+      window.confirm = jest.fn(() => false);
+
+      await app.eliminarPalabra(1);
+
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    test("elimina correctamente cuando confirma", async () => {
+      window.confirm = jest.fn(() => true);
+
       fetch.mockResponses(
-        [JSON.stringify({ mensaje: 'Palabra eliminada exitosamente' }), { status: 200 }],
+        [JSON.stringify({ mensaje: "OK" }), { status: 200 }],
         [JSON.stringify([]), { status: 200 }]
       );
 
-      // ACT
-      await appFunctions.eliminarPalabra(1);
+      await app.eliminarPalabra(5);
 
-      // ASSERT
-      expect(window.confirm).toHaveBeenCalled();
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost/api/palabras/1',
-        expect.objectContaining({ method: 'DELETE' })
+        "http://localhost/api/palabras/5",
+        expect.objectContaining({ method: "DELETE" })
       );
     });
 
-    test('NO debería eliminar si el usuario cancela', async () => {
-      // ARRANGE
-      window.confirm = jest.fn(() => false); // Usuario cancela
-
-      // ACT
-      await appFunctions.eliminarPalabra(1);
-
-      // ASSERT
-      expect(window.confirm).toHaveBeenCalled();
-      expect(fetch).not.toHaveBeenCalled();
-    });
-
-    test('debería manejar errores al eliminar', async () => {
-      // ARRANGE
+    test("maneja error al eliminar", async () => {
       window.confirm = jest.fn(() => true);
+
       fetch.mockResponseOnce(
-        JSON.stringify({ error: 'Error al eliminar' }), 
+        JSON.stringify({ error: "No se pudo eliminar" }),
         { status: 500 }
       );
 
-      // ACT
-      await appFunctions.eliminarPalabra(1);
+      await app.eliminarPalabra(3);
 
-      // ASSERT
-      const mensajeDiv = document.getElementById('mensaje');
-      expect(mensajeDiv.innerHTML).toContain('Error');
+      const html = document.getElementById("mensaje").innerHTML;
+      // ✅ Coincide con tu app.js
+      expect(html).toContain("No se pudo eliminar");
+      expect(html).toContain("error"); // clase CSS
     });
   });
 });

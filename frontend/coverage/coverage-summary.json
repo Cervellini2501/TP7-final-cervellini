@@ -1,3 +1,0 @@
-{"total": {"lines":{"total":48,"covered":40,"skipped":0,"pct":83.33},"statements":{"total":49,"covered":41,"skipped":0,"pct":83.67},"functions":{"total":8,"covered":6,"skipped":0,"pct":75},"branches":{"total":20,"covered":15,"skipped":0,"pct":75},"branchesTrue":{"total":0,"covered":0,"skipped":0,"pct":"Unknown"}}
-,"C:\\Users\\sofis\\TP7\\frontend\\app.js": {"lines":{"total":48,"covered":40,"skipped":0,"pct":83.33},"functions":{"total":8,"covered":6,"skipped":0,"pct":75},"statements":{"total":49,"covered":41,"skipped":0,"pct":83.67},"branches":{"total":20,"covered":15,"skipped":0,"pct":75}}
-}

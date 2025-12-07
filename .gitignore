@@ -1,17 +1,23 @@
 # --- Node modules ---
-/backend/node_modules/
-/frontend/node_modules/
-/node_modules/
+backend/node_modules/
+frontend/node_modules/
+node_modules/
 
-# --- Test results ---
-/backend/test-results/
-/frontend/test-results/
-/cypress/results/
-/coverage/
+# --- Test results & coverage ---
+backend/test-results/
+frontend/test-results/
+cypress/results/
+
+# Coverage (frontend, backend, etc.)
+coverage/
+backend/coverage/
+frontend/coverage/
+**/coverage/
+**/coverage/**
 
 # --- Cypress output ---
-/cypress/videos/
-/cypress/screenshots/
+cypress/videos/
+cypress/screenshots/
 
 # --- Logs ---
 *.log
@@ -20,8 +26,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # --- Build artifacts ---
-/dist/
-/build/
+dist/
+build/
 *.zip
 
 # --- System files ---
@@ -30,4 +36,4 @@ Thumbs.db
 
 # --- IDE ---
 .vscode/
-/.env
+.env
