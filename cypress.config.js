@@ -1,20 +1,16 @@
-import { defineConfig } from "cypress";
+const { defineConfig } = require("cypress");
 
-export default defineConfig({
+module.exports = defineConfig({
   e2e: {
     setupNodeEvents(on, config) {
-      // implement node event listeners here
+      return config;
     },
-    baseUrl: "https://palabras-qa-vc.azurewebsites.net", // la URL de QA
-    specPattern: "cypress/e2e/**/*.cy.js",               // dónde están tus tests
+    reporter: "junit",
+    reporterOptions: {
+      mochaFile: "cypress/results/results-[hash].xml",
+      toConsole: true,
+    },
+    baseUrl: "http://localhost:3000" 
   },
-
-  // 👇 ESTO VA FUERA DE `e2e`, A NIVEL RAÍZ
-  reporter: "junit",
-  reporterOptions: {
-    mochaFile: "cypress/results/results-[hash].xml",
-    toConsole: true,
-  },
-
   experimentalStudio: true,
 });
