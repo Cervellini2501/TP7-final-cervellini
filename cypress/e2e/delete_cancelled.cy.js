@@ -2,27 +2,35 @@ describe('Cancelación de borrado', () => {
   it('No borra la palabra si el usuario cancela la confirmación', () => {
     cy.visit('/');
 
-    // Esperar a que el contenedor de palabras exista y un pequeño buffer antes de contar
-    cy.get('#listaPalabras', { timeout: 10000 }).should('exist');
-    cy.wait(1000); // <-- tiempo de espera agregado
+    // 1) Crear una palabra específica para este test
+    cy.get('#palabraInput', { timeout: 10000 }).should('exist').type('cypress-cancelar{enter}');
 
-    // Espiar y forzar confirmación negativa
+    // Esperar a que aparezca en la lista
+    cy.get('#listaPalabras .palabra-item', { timeout: 10000 })
+      .contains('cypress-cancelar')
+      .should('exist');
+
+    // 2) Stub de confirm en false
     cy.window().then((win) => {
       cy.stub(win, 'confirm').returns(false).as('confirmSpy');
     });
 
-    // Contar cuántas palabras hay antes
-    cy.get('#listaPalabras div').then(($itemsBefore) => {
-      const cantidadAntes = $itemsBefore.length;
+    // 3) Ver cuántos items había antes
+    cy.get('#listaPalabras .palabra-item').then(($itemsAntes) => {
+      const cantidadAntes = $itemsAntes.length;
 
-      // Intentar borrar
-      cy.get('#listaPalabras div:nth-child(1) > button.delete-btn').click();
+      // 4) Click en el botón eliminar de la palabra creada
+      cy.contains('#listaPalabras .palabra-item', 'cypress-cancelar')
+        .find('button.delete-btn')
+        .click();
 
-      // Verificar que se llamó a confirm
+      // 5) Se llamó a confirm
       cy.get('@confirmSpy').should('have.been.calledOnce');
 
-      // Verificar que la cantidad de palabras no cambió
-      cy.get('#listaPalabras div').should('have.length', cantidadAntes);
+      // 6) La palabra sigue estando y la cantidad NO cambia
+      cy.get('#listaPalabras .palabra-item')
+        .should('have.length', cantidadAntes)
+        .should('contain.text', 'cypress-cancelar');
     });
   });
 });
