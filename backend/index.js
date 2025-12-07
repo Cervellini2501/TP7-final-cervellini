@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "frontend")));
 
 // Importar DB
-const db = require("./db");
+const { db } = require("./db");
 
 // -------------------------------
 // 🔥 MIDDLEWARE: Sanitizar inputs

@@ -1,14 +1,18 @@
 // backend/__tests__/palabras.test.js
 const request = require('supertest');
 
-// 🔹 Mock explícito del módulo '../db' ANTES de requerir app
-jest.mock('../db', () => ({
-  all: jest.fn(),
-  run: jest.fn()
-}));
+// 👇 Mockeamos el módulo ../db para las pruebas
+jest.mock('../db', () => {
+  const run = jest.fn();
+  const all = jest.fn();
+  return {
+    db: { run, all },   // ⚠️ importante: exportar { db: {...} }
+  };
+});
 
 // Ahora sí importamos el db mockeado y la app
-const db = require('../db');
+const { db } = require('../db');
+const request = require('supertest');
 const app = require('../index');
 
 describe('Palabras API', () => {
