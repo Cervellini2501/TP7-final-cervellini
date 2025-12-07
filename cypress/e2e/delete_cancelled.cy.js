@@ -1,28 +1,34 @@
+// cypress/e2e/delete_cancelled.cy.js
+
 describe('Cancelación de borrado', () => {
   it('No borra la palabra si el usuario cancela la confirmación', () => {
+    const palabra = `Test Cypress Cancelar ${Date.now()}`;
+
+    // 1) Precondición: crear la palabra directamente por API
+    cy.request('POST', '/api/palabras', { palabra });
+
+    // 2) Ir al frontend
     cy.visit('/');
 
-    // Esperar a que el contenedor de palabras exista y un pequeño buffer antes de contar
-    cy.get('#listaPalabras', { timeout: 10000 }).should('exist');
-    cy.wait(1000); // <-- tiempo de espera agregado
+    // 3) Esperar a que la palabra aparezca en la lista
+    cy.contains('#listaPalabras .palabra-item', palabra, { timeout: 10000 })
+      .should('exist');
 
-    // Espiar y forzar confirmación negativa
+    // 4) Stub de window.confirm para que el usuario "cancele"
     cy.window().then((win) => {
-      cy.stub(win, 'confirm').returns(false).as('confirmSpy');
+      cy.stub(win, 'confirm').returns(false).as('confirmStub');
     });
 
-    // Contar cuántas palabras hay antes
-    cy.get('#listaPalabras div').then(($itemsBefore) => {
-      const cantidadAntes = $itemsBefore.length;
+    // 5) Hacer click en el botón Eliminar de esa palabra
+    cy.contains('#listaPalabras .palabra-item', palabra)
+      .find('button.delete-btn')
+      .click();
 
-      // Intentar borrar
-      cy.get('#listaPalabras div:nth-child(1) > button.delete-btn').click();
+    // 6) Verificar que se llamó a confirm
+    cy.get('@confirmStub').should('have.been.calledOnce');
 
-      // Verificar que se llamó a confirm
-      cy.get('@confirmSpy').should('have.been.calledOnce');
-
-      // Verificar que la cantidad de palabras no cambió
-      cy.get('#listaPalabras div').should('have.length', cantidadAntes);
-    });
+    // 7) Como el usuario canceló, la palabra debe seguir en la lista
+    cy.contains('#listaPalabras .palabra-item', palabra)
+      .should('exist');
   });
 });
