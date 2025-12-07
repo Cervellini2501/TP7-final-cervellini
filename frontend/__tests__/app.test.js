@@ -97,6 +97,17 @@ describe("Frontend - Gestión de Palabras (Nuevo front mejorado)", () => {
         .toContain("No hay palabras guardadas");
     });
 
+    test("usa data.palabras cuando la API devuelve un objeto", async () => {
+      fetch.mockResponseOnce(
+        JSON.stringify({ cantidad: 1, palabras: [{ id: 99, palabra: "objeto" }] })
+      );
+
+      await app.cargarPalabras();
+
+      const html = document.getElementById("listaPalabras").innerHTML;
+      expect(html).toContain("objeto");
+    });
+
     test("muestra error cuando la API falla", async () => {
       fetch.mockRejectOnce(new Error("API caída"));
 
