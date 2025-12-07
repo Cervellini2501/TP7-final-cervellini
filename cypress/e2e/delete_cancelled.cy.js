@@ -1,30 +1,36 @@
-// cypress/e2e/delete_cancelled.cy.js
 describe('Cancelación de borrado', () => {
   it('No borra la palabra si el usuario cancela la confirmación', () => {
-    const palabraPersistente = 'cypress-cancelar';
+    const palabra = `cypress-cancelar-${Date.now()}`;
 
-    // Crear la palabra por API para asegurar que exista
-    cy.request('POST', '/api/palabras', { palabra: palabraPersistente });
-
+    // 1) Ir a la app
     cy.visit('/');
 
-    // Esperar la palabra en la lista
-    cy.get('#listaPalabras', { timeout: 15000 }).should('exist');
-    cy.contains('#listaPalabras .palabra-item', palabraPersistente, { timeout: 15000 })
-      .as('itemObjetivo');
+    // 2) Crear una palabra usando el formulario de la UI
+    cy.get('#palabraInput')
+      .clear()
+      .type(palabra);
 
-    // Stub de confirm en false (usuario cancela)
+    cy.contains('button', 'Agregar').click();
+
+    // 3) Verificar que la palabra aparece en la lista
+    cy.contains('#listaPalabras .palabra-item', palabra, { timeout: 10000 })
+      .should('exist');
+
+    // 4) Stub de confirm para devolver "false"
     cy.window().then((win) => {
       cy.stub(win, 'confirm').returns(false).as('confirmSpy');
     });
 
-    // Click en eliminar
-    cy.get('@itemObjetivo').find('button.delete-btn').click();
+    // 5) Clickear el botón "Eliminar" de ESA palabra
+    cy.contains('#listaPalabras .palabra-item', palabra)
+      .within(() => {
+        cy.get('button.delete-btn').click();
+      });
 
-    // Se llamó a confirm
+    // 6) Verificar que se llamó a confirm
     cy.get('@confirmSpy').should('have.been.calledOnce');
 
-    // La palabra sigue existiendo
-    cy.contains('#listaPalabras .palabra-item', palabraPersistente).should('exist');
+    // 7) Verificar que la palabra SIGUE existiendo
+    cy.contains('#listaPalabras .palabra-item', palabra).should('exist');
   });
 });
