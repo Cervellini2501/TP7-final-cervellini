@@ -17,8 +17,9 @@ variables:
   - name: azureSubscription
     value: 'azure-palabras-connection'
 
+  # NUEVO: nombre real de la App Service QA
   - name: webAppNameQA
-    value: 'palabras-qa'
+    value: 'palabras-qa-vc'
 
   - name: webAppNamePROD
     value: 'palabras-prod'
@@ -301,7 +302,7 @@ stages:
                 inputs:
                   azureSubscription: "$(azureSubscription)"
                   appName: "$(webAppNameQA)"
-                  resourceGroupName: "palabras-ingsoft3-2025"
+                  resourceGroupName: "palabras-qa-rg"
                   appSettings: |
                     [
                       { "name": "ENVIRONMENT_NAME", "value": "$(ENVIRONMENT_NAME)" },
@@ -321,7 +322,7 @@ stages:
 
               - script: |
                   echo "Waiting for health endpoint to respond..."
-                  url="https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net/health"
+                  url="https://$(webAppNameQA).azurewebsites.net/health"
                   timeout=120
                   interval=5
                   elapsed=0
@@ -365,7 +366,7 @@ stages:
 
         - script: |
             echo "🌐 Esperando a que la app QA esté online..."
-            URL="https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net"
+            URL="https://$(webAppNameQA).azurewebsites.net"
             npx wait-on "$URL"
           displayName: 'Wait for deployed QA app to be ready'
 
@@ -378,7 +379,7 @@ stages:
               --reporter junit \
               --reporter-options "mochaFile=cypress/results/junit-[hash].xml,toConsole=true" \
               --config-file cypress.config.js \
-              --config baseUrl=https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net,pageLoadTimeout=120000,defaultCommandTimeout=15000
+              --config baseUrl=https://$(webAppNameQA).azurewebsites.net,pageLoadTimeout=120000,defaultCommandTimeout=15000
           displayName: 'Run Cypress E2E Tests'
           env:
             NODE_ENV: test
