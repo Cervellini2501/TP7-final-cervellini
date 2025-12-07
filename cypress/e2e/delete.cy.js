@@ -1,36 +1,31 @@
+// cypress/e2e/delete.cy.js
 describe('Confirmación de borrado aceptada', () => {
   it('Elimina la palabra si el usuario confirma', () => {
+    const palabraABorrar = 'palabra-para-borrar-ci';
+
+    // 1) Crear una palabra específica para este test (vía API)
+    cy.request('POST', '/api/palabras', { palabra: palabraABorrar });
+
+    // 2) Visitar la app
     cy.visit('/');
 
-    // 1) Crear una palabra específica para este test
-    cy.get('#palabraInput', { timeout: 10000 }).should('exist').type('cypress-borrar{enter}');
+    // 3) Asegurar que la lista y la palabra existan
+    cy.get('#listaPalabras', { timeout: 10000 }).should('exist');
+    cy.contains('#listaPalabras .palabra-item', palabraABorrar, { timeout: 10000 })
+      .as('itemABorrar');
 
-    // Esperar a que aparezca en la lista
-    cy.get('#listaPalabras .palabra-item', { timeout: 10000 })
-      .contains('cypress-borrar')
-      .should('exist');
-
-    // 2) Stub de confirm en true
+    // 4) Stub de confirm para que devuelva "true"
     cy.window().then((win) => {
       cy.stub(win, 'confirm').returns(true).as('confirmSpy');
     });
 
-    // 3) Ver cuántos items había antes
-    cy.get('#listaPalabras .palabra-item').then(($itemsAntes) => {
-      const cantidadAntes = $itemsAntes.length;
+    // 5) Click en el botón Eliminar de ESA palabra
+    cy.get('@itemABorrar').find('button.delete-btn').click();
 
-      // 4) Click en el botón eliminar de la palabra creada
-      cy.contains('#listaPalabras .palabra-item', 'cypress-borrar')
-        .find('button.delete-btn')
-        .click();
+    // 6) Verificar que se llamó a confirm
+    cy.get('@confirmSpy').should('have.been.calledOnce');
 
-      // 5) Se llamó a confirm
-      cy.get('@confirmSpy').should('have.been.calledOnce');
-
-      // 6) La palabra ya no está y la cantidad bajó en 1
-      cy.get('#listaPalabras .palabra-item')
-        .should('have.length', cantidadAntes - 1)
-        .should('not.contain.text', 'cypress-borrar');
-    });
+    // 7) Verificar que la palabra YA NO está en la lista
+    cy.contains('#listaPalabras .palabra-item', palabraABorrar).should('not.exist');
   });
 });

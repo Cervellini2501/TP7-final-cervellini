@@ -84,7 +84,12 @@ async function cargarPalabras() {
     return mostrarMensaje("Error al cargar palabras", "error");
   }
 
-  const palabras = resultado.data;
+  // La API puede devolver un array directo o un objeto { palabras: [] }
+  const palabras = Array.isArray(resultado.data)
+    ? resultado.data
+    : Array.isArray(resultado.data?.palabras)
+      ? resultado.data.palabras
+      : [];
 
   if (!palabras || palabras.length === 0) {
     lista.innerHTML = `<p style="text-align:center;color:#666;">No hay palabras guardadas</p>`;
