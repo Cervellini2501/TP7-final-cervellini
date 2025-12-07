@@ -1,6 +1,6 @@
 describe('Confirmación de borrado aceptada', () => {
   it('Elimina la palabra si el usuario confirma', () => {
-    cy.visit('palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net');
+    cy.visit('/');
 
     // Esperar a que el contenedor de palabras exista y un pequeño buffer antes de contar
     cy.get('#listaPalabras', { timeout: 10000 }).should('exist');

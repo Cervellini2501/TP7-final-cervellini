@@ -1,6 +1,6 @@
 describe('Cancelación de borrado', () => {
   it('No borra la palabra si el usuario cancela la confirmación', () => {
-    cy.visit('palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net');
+    cy.visit('/');
 
     // Esperar a que el contenedor de palabras exista y un pequeño buffer antes de contar
     cy.get('#listaPalabras', { timeout: 10000 }).should('exist');
