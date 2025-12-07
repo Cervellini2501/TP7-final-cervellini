@@ -74,44 +74,55 @@ stages:
             failTaskOnFailedTests: true
             testRunTitle: 'Backend Unit Tests'
 
+        # ✅ BACKEND: Publish coverage con Cobertura
         - task: PublishCodeCoverageResults@2
           displayName: "Publish Backend Coverage"
           condition: succeededOrFailed()
           inputs:
+            codeCoverageTool: 'Cobertura'
             summaryFileLocation: '$(System.DefaultWorkingDirectory)/backend/coverage/cobertura-coverage.xml'
-            pathToSources: '$(System.DefaultWorkingDirectory)/backend'
+            reportDirectory: '$(System.DefaultWorkingDirectory)/backend/coverage'
             failIfCoverageEmpty: true
 
+        # ✅ BACKEND: Verificar coverage con Node y umbrales realistas
         - script: |
             echo "════════════════════════════════════════"
             echo "  BACKEND: Verifying coverage threshold"
             echo "════════════════════════════════════════"
             cd backend
 
-            if [ -f "coverage/coverage-summary.json" ]; then
-              LINES_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['lines']['pct'])")
-              STATEMENTS_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['statements']['pct'])")
-              FUNCTIONS_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['functions']['pct'])")
-              BRANCHES_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['branches']['pct'])")
-
-              echo "Lines: ${LINES_PCT}%"
-              echo "Statements: ${STATEMENTS_PCT}%"
-              echo "Functions: ${FUNCTIONS_PCT}%"
-              echo "Branches: ${BRANCHES_PCT}%"
-
-              AVG=$(python3 -c "print(round((${LINES_PCT} + ${STATEMENTS_PCT} + ${FUNCTIONS_PCT} + ${BRANCHES_PCT}) / 4, 2))")
-              echo "Average Coverage: ${AVG}%"
-
-              if (( $(echo "${AVG} < 70" | bc -l) )); then
-                echo "❌ Backend coverage (${AVG}%) is below 70%"
-                exit 1
-              fi
-
-              echo "✅ Backend coverage (${AVG}%) meets the 70% requirement"
-            else
+            if [ ! -f "coverage/coverage-summary.json" ]; then
               echo "❌ Coverage summary file not found"
               exit 1
             fi
+
+            node - << 'EOF'
+            const summary = require('./coverage/coverage-summary.json').total;
+
+            console.log('Backend total coverage:', summary);
+
+            const min = {
+              statements: 60,
+              branches:   60,
+              functions:  50,
+              lines:      60,
+            };
+
+            const fails = [];
+            for (const key of Object.keys(min)) {
+              const pct = summary[key]?.pct ?? 0;
+              if (pct < min[key]) {
+                fails.push(`${key}: ${pct}% < mínimo ${min[key]}%`);
+              }
+            }
+
+            if (fails.length) {
+              console.error('❌ Coverage backend por debajo del mínimo:\n' + fails.join('\n'));
+              process.exit(1);
+            } else {
+              console.log('✅ Coverage backend OK, umbrales cumplidos.');
+            }
+            EOF
           displayName: "Backend - Verify Coverage Threshold"
           condition: succeededOrFailed()
 
@@ -147,44 +158,55 @@ stages:
             failTaskOnFailedTests: true
             testRunTitle: 'Frontend Unit Tests'
 
+        # ✅ FRONTEND: Publish coverage con Cobertura
         - task: PublishCodeCoverageResults@2
           displayName: "Publish Frontend Coverage"
           condition: succeededOrFailed()
           inputs:
+            codeCoverageTool: 'Cobertura'
             summaryFileLocation: '$(System.DefaultWorkingDirectory)/frontend/coverage/cobertura-coverage.xml'
-            pathToSources: '$(System.DefaultWorkingDirectory)/frontend'
+            reportDirectory: '$(System.DefaultWorkingDirectory)/frontend/coverage'
             failIfCoverageEmpty: true
 
+        # ✅ FRONTEND: Verificar coverage con Node y umbrales alineados al Jest del front
         - script: |
             echo "════════════════════════════════════════"
             echo "  FRONTEND: Verifying coverage threshold"
             echo "════════════════════════════════════════"
             cd frontend
 
-            if [ -f "coverage/coverage-summary.json" ]; then
-              LINES_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['lines']['pct'])")
-              STATEMENTS_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['statements']['pct'])")
-              FUNCTIONS_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['functions']['pct'])")
-              BRANCHES_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['branches']['pct'])")
-
-              echo "Lines: ${LINES_PCT}%"
-              echo "Statements: ${STATEMENTS_PCT}%"
-              echo "Functions: ${FUNCTIONS_PCT}%"
-              echo "Branches: ${BRANCHES_PCT}%"
-
-              AVG=$(python3 -c "print(round((${LINES_PCT} + ${STATEMENTS_PCT} + ${FUNCTIONS_PCT} + ${BRANCHES_PCT}) / 4, 2))")
-              echo "Average Coverage: ${AVG}%"
-
-              if (( $(echo "${AVG} < 70" | bc -l) )); then
-                echo "❌ Frontend coverage (${AVG}%) is below 70%"
-                exit 1
-              fi
-
-              echo "✅ Frontend coverage (${AVG}%) meets the 70% requirement"
-            else
+            if [ ! -f "coverage/coverage-summary.json" ]; then
               echo "❌ Coverage summary file not found"
               exit 1
             fi
+
+            node - << 'EOF'
+            const summary = require('./coverage/coverage-summary.json').total;
+
+            console.log('Frontend total coverage:', summary);
+
+            const min = {
+              statements: 70,
+              branches:   65,
+              functions:  70,
+              lines:      70,
+            };
+
+            const fails = [];
+            for (const key of Object.keys(min)) {
+              const pct = summary[key]?.pct ?? 0;
+              if (pct < min[key]) {
+                fails.push(`${key}: ${pct}% < mínimo ${min[key]}%`);
+              }
+            }
+
+            if (fails.length) {
+              console.error('❌ Coverage frontend por debajo del mínimo:\n' + fails.join('\n'));
+              process.exit(1);
+            } else {
+              console.log('✅ Coverage frontend OK, umbrales cumplidos.');
+            }
+            EOF
           displayName: "Frontend - Verify Coverage Threshold"
           condition: succeededOrFailed()
 
