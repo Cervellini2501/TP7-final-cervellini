@@ -17,7 +17,7 @@ variables:
   - name: azureSubscription
     value: 'azure-palabras-connection'
 
-  # NUEVO: nombre real de la App Service QA
+  # Nombre real de la App Service QA
   - name: webAppNameQA
     value: 'palabras-qa-vc'
 
@@ -63,7 +63,6 @@ stages:
           env:
             NODE_ENV: 'test'
 
-        # Publicar resultados de tests del backend
         - task: PublishTestResults@2
           displayName: "Publish Backend Test Results"
           condition: succeededOrFailed()
@@ -75,7 +74,6 @@ stages:
             failTaskOnFailedTests: true
             testRunTitle: 'Backend Unit Tests'
 
-        # Publicar coverage del backend
         - task: PublishCodeCoverageResults@2
           displayName: "Publish Backend Coverage"
           condition: succeededOrFailed()
@@ -84,35 +82,31 @@ stages:
             pathToSources: '$(System.DefaultWorkingDirectory)/backend'
             failIfCoverageEmpty: true
 
-        # Verificar threshold del backend (Jest ya falla si no cumple)
         - script: |
             echo "════════════════════════════════════════"
             echo "  BACKEND: Verifying coverage threshold"
             echo "════════════════════════════════════════"
             cd backend
-            
-            # Extraer el porcentaje del archivo json-summary
+
             if [ -f "coverage/coverage-summary.json" ]; then
               LINES_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['lines']['pct'])")
               STATEMENTS_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['statements']['pct'])")
               FUNCTIONS_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['functions']['pct'])")
               BRANCHES_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['branches']['pct'])")
-              
+
               echo "Lines: ${LINES_PCT}%"
               echo "Statements: ${STATEMENTS_PCT}%"
               echo "Functions: ${FUNCTIONS_PCT}%"
               echo "Branches: ${BRANCHES_PCT}%"
-              
-              # Calcular promedio
+
               AVG=$(python3 -c "print(round((${LINES_PCT} + ${STATEMENTS_PCT} + ${FUNCTIONS_PCT} + ${BRANCHES_PCT}) / 4, 2))")
               echo "Average Coverage: ${AVG}%"
-              
-              # Verificar threshold
+
               if (( $(echo "${AVG} < 70" | bc -l) )); then
                 echo "❌ Backend coverage (${AVG}%) is below 70%"
                 exit 1
               fi
-              
+
               echo "✅ Backend coverage (${AVG}%) meets the 70% requirement"
             else
               echo "❌ Coverage summary file not found"
@@ -142,7 +136,6 @@ stages:
           env:
             NODE_ENV: 'test'
 
-        # Publicar resultados de tests del frontend
         - task: PublishTestResults@2
           displayName: "Publish Frontend Test Results"
           condition: succeededOrFailed()
@@ -154,7 +147,6 @@ stages:
             failTaskOnFailedTests: true
             testRunTitle: 'Frontend Unit Tests'
 
-        # Publicar coverage del frontend
         - task: PublishCodeCoverageResults@2
           displayName: "Publish Frontend Coverage"
           condition: succeededOrFailed()
@@ -163,32 +155,31 @@ stages:
             pathToSources: '$(System.DefaultWorkingDirectory)/frontend'
             failIfCoverageEmpty: true
 
-        # Verificar threshold del frontend
         - script: |
             echo "════════════════════════════════════════"
             echo "  FRONTEND: Verifying coverage threshold"
             echo "════════════════════════════════════════"
             cd frontend
-            
+
             if [ -f "coverage/coverage-summary.json" ]; then
               LINES_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['lines']['pct'])")
               STATEMENTS_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['statements']['pct'])")
               FUNCTIONS_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['functions']['pct'])")
               BRANCHES_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['branches']['pct'])")
-              
+
               echo "Lines: ${LINES_PCT}%"
               echo "Statements: ${STATEMENTS_PCT}%"
               echo "Functions: ${FUNCTIONS_PCT}%"
               echo "Branches: ${BRANCHES_PCT}%"
-              
+
               AVG=$(python3 -c "print(round((${LINES_PCT} + ${STATEMENTS_PCT} + ${FUNCTIONS_PCT} + ${BRANCHES_PCT}) / 4, 2))")
               echo "Average Coverage: ${AVG}%"
-              
+
               if (( $(echo "${AVG} < 70" | bc -l) )); then
                 echo "❌ Frontend coverage (${AVG}%) is below 70%"
                 exit 1
               fi
-              
+
               echo "✅ Frontend coverage (${AVG}%) meets the 70% requirement"
             else
               echo "❌ Coverage summary file not found"
@@ -198,7 +189,7 @@ stages:
           condition: succeededOrFailed()
 
         # ===============================================
-        # SONARCLOUD - usando sonar-scanner CLI (config TP7 original)
+        # SONARCLOUD
         # ===============================================
         - script: |
             set -e
@@ -212,7 +203,6 @@ stages:
             echo "Descomprimiendo SonarScanner..."
             unzip -q sonar-scanner.zip
 
-            # Añadimos el binario al PATH
             export PATH="$PATH:$(pwd)/sonar-scanner-5.0.1.3006-linux/bin"
 
             echo "Ejecutando análisis SonarCloud..."
@@ -247,7 +237,6 @@ stages:
             TargetFolder: 'backend/frontend'
             OverWrite: true
 
-        # ARCHIVE APPLICATION FILES
         - task: ArchiveFiles@2
           displayName: 'Archive Application Files'
           condition: succeeded()
@@ -259,7 +248,6 @@ stages:
             replaceExistingArchive: true
             verbose: true
 
-        # PUBLISH BUILD ARTIFACTS
         - task: PublishBuildArtifacts@1
           displayName: 'Publish Application Artifact'
           condition: succeeded()
@@ -278,9 +266,8 @@ stages:
   variables:
   - group: QA-Variables
   jobs:
-    #
-    # JOB 1: Deploy to Azure QA
-    #
+
+    # JOB 1: Deploy a Azure QA
     - deployment: DeployToAzureQA
       displayName: 'Deploy to QA'
       environment: 'QA'
@@ -296,7 +283,6 @@ stages:
                   artifactName: 'drop'
                   downloadPath: '$(System.ArtifactsDirectory)'
 
-              # Configurar variables de entorno
               - task: AzureAppServiceSettings@1
                 displayName: "Configure QA Environment Variables"
                 inputs:
@@ -339,9 +325,7 @@ stages:
                 displayName: 'Wait for /health (QA)'
                 condition: succeeded()
 
-    #
     # JOB 2: Cypress Integration Tests
-    #
     - job: CypressIntegrationTests
       displayName: 'Cypress Integration Tests'
       dependsOn: DeployToAzureQA
@@ -359,8 +343,9 @@ stages:
 
         - script: |
             echo "📦 Installing Cypress + E2E dependencies"
+            cd $(System.DefaultWorkingDirectory)
             npm ci
-            npm install --save-dev cypress wait-on @faker-js/faker
+            npm install --save-dev cypress mocha-junit-reporter wait-on @faker-js/faker
             npx cypress install || true
           displayName: 'Install Cypress + project deps'
 
@@ -376,9 +361,6 @@ stages:
             ls -la
             npx cypress run \
               --browser chromium --headless \
-              --reporter junit \
-              --reporter-options "mochaFile=cypress/results/junit-[hash].xml,toConsole=true" \
-              --config-file cypress.config.js \
               --config baseUrl=https://$(webAppNameQA).azurewebsites.net,pageLoadTimeout=120000,defaultCommandTimeout=15000
           displayName: 'Run Cypress E2E Tests'
           env:
