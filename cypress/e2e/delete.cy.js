@@ -2,22 +2,12 @@ describe('Confirmación de borrado aceptada', () => {
   it('Elimina la palabra si el usuario confirma', () => {
     const palabra = `cypress-borrar-${Date.now()}`;
 
-    // Sincronizar con la API para evitar race en QA
-    cy.intercept('POST', '**/api/palabras').as('crear');
-    cy.intercept('GET', '**/api/palabras').as('listar');
+    // Crear la palabra directamente por API para asegurar que exista
+    cy.request('POST', '/api/palabras', { palabra });
 
     cy.visit('/');
 
-    // Crear palabra vía UI
-    cy.get('#palabraInput').clear().type(palabra);
-    cy.contains('button', 'Agregar').click();
-
-    // Esperar POST y luego forzar refresco para obtener la lista actualizada
-    cy.wait('@crear', { timeout: 20000 });
-    cy.reload();
-    cy.wait('@listar', { timeout: 20000 });
-
-    // Verificar que la palabra aparece en la lista (sin depender del mensaje)
+    // Verificar que la palabra aparece en la lista
     cy.contains('#listaPalabras .palabra-item', palabra, { timeout: 20000 })
       .should('exist');
 
