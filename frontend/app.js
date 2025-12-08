@@ -20,9 +20,11 @@ async function cargarPalabras() {
         const palabras = await response.json();
         
         const listaPalabras = document.getElementById('listaPalabras');
+        const contador = document.getElementById('contadorPalabras');
         
         if (palabras.length === 0) {
             listaPalabras.innerHTML = '<p style="text-align: center; color: #666;">No hay palabras guardadas</p>';
+            if (contador) contador.textContent = 'Total: 0 palabras';
             return;
         }
         
@@ -34,6 +36,11 @@ async function cargarPalabras() {
                 </button>
             </div>
         `).join('');
+        
+        if (contador) {
+            const n = palabras.length;
+            contador.textContent = `Total: ${n} palabra${n !== 1 ? 's' : ''}`;
+        }
         
     } catch (error) {
         console.error('Error al cargar palabras:', error);

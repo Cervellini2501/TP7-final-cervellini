@@ -104,6 +104,13 @@
             color: #666;
             margin: 20px 0;
         }
+
+        #contadorPalabras {
+            text-align: right;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -116,6 +123,9 @@
         </div>
         
         <div id="mensaje"></div>
+
+        <!-- 👉 NUEVO: contador -->
+        <p id="contadorPalabras">Total: 0 palabras</p>
         
         <div id="listaPalabras">
             <div class="loading">Cargando palabras...</div>

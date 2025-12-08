@@ -211,4 +211,44 @@ describe('Frontend - Gestión de Palabras', () => {
       expect(mensajeDiv.innerHTML).toContain('Error');
     });
   });
+
+  describe('cargarPalabras() - contador', () => {
+    beforeEach(() => {
+      document.body.innerHTML = `
+        <div id="mensaje"></div>
+        <p id="contadorPalabras">Total: 0 palabras</p>
+        <div id="listaPalabras"></div>
+        <input id="palabraInput" />
+      `;
+      fetch.resetMocks();
+    });
+
+    it('actualiza el contador con la cantidad de palabras', async () => {
+      // ARRANGE
+      const mockPalabras = [
+        { id: 1, palabra: 'hola' },
+        { id: 2, palabra: 'mundo' }
+      ];
+      fetch.mockResponseOnce(JSON.stringify(mockPalabras));
+
+      // ACT
+      await appFunctions.cargarPalabras();
+
+      // ASSERT
+      const contador = document.getElementById('contadorPalabras');
+      expect(contador.textContent).toBe('Total: 2 palabras');
+    });
+
+    it('muestra Total: 0 palabras cuando la lista está vacía', async () => {
+      // ARRANGE
+      fetch.mockResponseOnce(JSON.stringify([]));
+
+      // ACT
+      await appFunctions.cargarPalabras();
+
+      // ASSERT
+      const contador = document.getElementById('contadorPalabras');
+      expect(contador.textContent).toBe('Total: 0 palabras');
+    });
+  });
 });
