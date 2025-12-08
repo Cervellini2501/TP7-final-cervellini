@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 // Puerto dinámico para Azure o 3000 local
 const PORT = process.env.PORT || 3000;
@@ -9,8 +10,15 @@ const PORT = process.env.PORT || 3000;
 const ENV_NAME = process.env.ENVIRONMENT_NAME || 'development';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// 👉 Ruta REAL del frontend (está fuera de /backend)
-const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
+// 👉 Resolver la ruta del frontend según dónde estemos (local vs Azure)
+let FRONTEND_DIR = path.join(__dirname, '..', 'frontend'); // caso local
+
+if (!fs.existsSync(path.join(FRONTEND_DIR, 'index.html'))) {
+  // Si no existe ahí (caso Azure, donde copiamos a ./frontend)
+  FRONTEND_DIR = path.join(__dirname, 'frontend');
+}
+
+console.log('📁 FRONTEND_DIR resolved to:', FRONTEND_DIR);
 
 // Crear app
 const app = express();
