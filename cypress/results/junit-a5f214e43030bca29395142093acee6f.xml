@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="1.265" tests="1" failures="0">
+  <testsuite name="Root Suite" timestamp="2025-12-07T19:09:20" tests="0" file="cypress\e2e\add_word.cy.js" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Agregar palabra" timestamp="2025-12-07T19:09:20" tests="1" time="1.253" failures="0">
+    <testcase name="Agregar palabra Agrega una palabra correctamente" time="1.189" classname="Agrega una palabra correctamente">
+    </testcase>
+  </testsuite>
+</testsuites>

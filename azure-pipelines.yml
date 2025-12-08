@@ -8,10 +8,21 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  nodeVersion: '20.x'  
-  azureSubscription: 'azure-palabras-connection' 
-  webAppNameQA: 'palabras-qa' 
-  webAppNamePROD: 'palabras-prod' 
+  # Grupo de variables para SonarCloud (SONAR_ORG, SONAR_PROJECT_KEY, SONAR_TOKEN)
+  - group: TP7-Variables
+
+  - name: nodeVersion
+    value: '20.x'
+
+  - name: azureSubscription
+    value: 'azure-palabras-connection'
+
+  # Nombres REALES de tus App Service
+  - name: webAppNameQA
+    value: 'palabras-qa-vc'
+
+  - name: webAppNamePROD
+    value: 'palabras-prod'
 
 # =======================================
 # STAGE 1: Build and Test Backend + Frontend
@@ -52,7 +63,6 @@ stages:
           env:
             NODE_ENV: 'test'
 
-        # Publicar resultados de tests del backend
         - task: PublishTestResults@2
           displayName: "Publish Backend Test Results"
           condition: succeededOrFailed()
@@ -64,7 +74,6 @@ stages:
             failTaskOnFailedTests: true
             testRunTitle: 'Backend Unit Tests'
 
-        # Publicar coverage del backend
         - task: PublishCodeCoverageResults@2
           displayName: "Publish Backend Coverage"
           condition: succeededOrFailed()
@@ -73,35 +82,31 @@ stages:
             pathToSources: '$(System.DefaultWorkingDirectory)/backend'
             failIfCoverageEmpty: true
 
-        # Verificar threshold del backend (Jest ya falla si no cumple)
         - script: |
             echo "════════════════════════════════════════"
             echo "  BACKEND: Verifying coverage threshold"
             echo "════════════════════════════════════════"
             cd backend
-            
-            # Extraer el porcentaje del archivo json-summary
+
             if [ -f "coverage/coverage-summary.json" ]; then
               LINES_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['lines']['pct'])")
               STATEMENTS_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['statements']['pct'])")
               FUNCTIONS_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['functions']['pct'])")
               BRANCHES_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['branches']['pct'])")
-              
+
               echo "Lines: ${LINES_PCT}%"
               echo "Statements: ${STATEMENTS_PCT}%"
               echo "Functions: ${FUNCTIONS_PCT}%"
               echo "Branches: ${BRANCHES_PCT}%"
-              
-              # Calcular promedio
+
               AVG=$(python3 -c "print(round((${LINES_PCT} + ${STATEMENTS_PCT} + ${FUNCTIONS_PCT} + ${BRANCHES_PCT}) / 4, 2))")
               echo "Average Coverage: ${AVG}%"
-              
-              # Verificar threshold
+
               if (( $(echo "${AVG} < 70" | bc -l) )); then
                 echo "❌ Backend coverage (${AVG}%) is below 70%"
                 exit 1
               fi
-              
+
               echo "✅ Backend coverage (${AVG}%) meets the 70% requirement"
             else
               echo "❌ Coverage summary file not found"
@@ -131,7 +136,6 @@ stages:
           env:
             NODE_ENV: 'test'
 
-        # Publicar resultados de tests del frontend
         - task: PublishTestResults@2
           displayName: "Publish Frontend Test Results"
           condition: succeededOrFailed()
@@ -143,7 +147,6 @@ stages:
             failTaskOnFailedTests: true
             testRunTitle: 'Frontend Unit Tests'
 
-        # Publicar coverage del frontend
         - task: PublishCodeCoverageResults@2
           displayName: "Publish Frontend Coverage"
           condition: succeededOrFailed()
@@ -152,32 +155,31 @@ stages:
             pathToSources: '$(System.DefaultWorkingDirectory)/frontend'
             failIfCoverageEmpty: true
 
-        # Verificar threshold del frontend
         - script: |
             echo "════════════════════════════════════════"
             echo "  FRONTEND: Verifying coverage threshold"
             echo "════════════════════════════════════════"
             cd frontend
-            
+
             if [ -f "coverage/coverage-summary.json" ]; then
               LINES_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['lines']['pct'])")
               STATEMENTS_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['statements']['pct'])")
               FUNCTIONS_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['functions']['pct'])")
               BRANCHES_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['branches']['pct'])")
-              
+
               echo "Lines: ${LINES_PCT}%"
               echo "Statements: ${STATEMENTS_PCT}%"
               echo "Functions: ${FUNCTIONS_PCT}%"
               echo "Branches: ${BRANCHES_PCT}%"
-              
+
               AVG=$(python3 -c "print(round((${LINES_PCT} + ${STATEMENTS_PCT} + ${FUNCTIONS_PCT} + ${BRANCHES_PCT}) / 4, 2))")
               echo "Average Coverage: ${AVG}%"
-              
+
               if (( $(echo "${AVG} < 70" | bc -l) )); then
                 echo "❌ Frontend coverage (${AVG}%) is below 70%"
                 exit 1
               fi
-              
+
               echo "✅ Frontend coverage (${AVG}%) meets the 70% requirement"
             else
               echo "❌ Coverage summary file not found"
@@ -186,15 +188,30 @@ stages:
           displayName: "Frontend - Verify Coverage Threshold"
           condition: succeededOrFailed()
 
-        - task: SonarCloudPrepare@3
-          inputs:
-            SonarQube: 'sonar-cloud-connection'
-            organization: 'sofiaoliveto'
-            scannerMode: 'cli'
-            configMode: 'file'
-            cliProjectKey: 'sofiaoliveto_TP7'
-            cliProjectName: 'TP7'
-            cliSources: '.'
+        # ===============================================
+        # SONARCLOUD (usando variables TP7-Variables)
+        # ===============================================
+        - script: |
+            set -e
+            echo "════════════════════════════════════════"
+            echo "  SONARCLOUD: Downloading SonarScanner CLI"
+            echo "════════════════════════════════════════"
+
+            curl -sSLo sonar-scanner.zip \
+              https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+
+            unzip -q sonar-scanner.zip
+
+            export PATH="$PATH:$(pwd)/sonar-scanner-5.0.1.3006-linux/bin"
+
+            echo "Ejecutando análisis SonarCloud..."
+            sonar-scanner \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.organization=$(SONAR_ORG) \
+              -Dsonar.projectKey=$(SONAR_PROJECT_KEY) \
+              -Dsonar.token=$(SONAR_TOKEN) \
+              -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info,frontend/coverage/lcov.info
+          displayName: 'SonarCloud - análisis'
 
         # ===============================================
         # BUILD Y PREPARAR ARTEFACTOS
@@ -219,15 +236,6 @@ stages:
             TargetFolder: 'backend/frontend'
             OverWrite: true
 
-        - task: SonarCloudAnalyze@3
-          inputs:
-            jdkversion: 'JAVA_HOME_17_X64'
-
-        - task: SonarCloudPublish@3
-          inputs:
-            pollingTimeoutSec: '300'
-
-        # ARCHIVE APPLICATION FILES
         - task: ArchiveFiles@2
           displayName: 'Archive Application Files'
           condition: succeeded()
@@ -239,7 +247,6 @@ stages:
             replaceExistingArchive: true
             verbose: true
 
-        # PUBLISH BUILD ARTIFACTS
         - task: PublishBuildArtifacts@1
           displayName: 'Publish Application Artifact'
           condition: succeeded()
@@ -257,10 +264,8 @@ stages:
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   variables:
   - group: QA-Variables
-    #
-    # JOB 1: Deploy to Azure QA
-    #
   jobs:
+    # JOB 1: Deploy to Azure QA
     - deployment: DeployToAzureQA
       displayName: 'Deploy to QA'
       environment: 'QA'
@@ -276,13 +281,12 @@ stages:
                   artifactName: 'drop'
                   downloadPath: '$(System.ArtifactsDirectory)'
 
-              # Configurar variables de entorno
               - task: AzureAppServiceSettings@1
                 displayName: "Configure QA Environment Variables"
                 inputs:
                   azureSubscription: "$(azureSubscription)"
                   appName: "$(webAppNameQA)"
-                  resourceGroupName: "palabras-ingsoft3-2025"
+                  resourceGroupName: "palabras-qa-rg"
                   appSettings: |
                     [
                       { "name": "ENVIRONMENT_NAME", "value": "$(ENVIRONMENT_NAME)" },
@@ -302,7 +306,7 @@ stages:
 
               - script: |
                   echo "Waiting for health endpoint to respond..."
-                  url="https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net/health"
+                  url="https://$(webAppNameQA).azurewebsites.net/health"
                   timeout=120
                   interval=5
                   elapsed=0
@@ -319,9 +323,7 @@ stages:
                 displayName: 'Wait for /health (QA)'
                 condition: succeeded()
 
-    #
     # JOB 2: Cypress Integration Tests
-    #
     - job: CypressIntegrationTests
       displayName: 'Cypress Integration Tests'
       dependsOn: DeployToAzureQA
@@ -346,7 +348,7 @@ stages:
 
         - script: |
             echo "🌐 Esperando a que la app QA esté online..."
-            URL="https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net"
+            URL="https://$(webAppNameQA).azurewebsites.net"
             npx wait-on "$URL"
           displayName: 'Wait for deployed QA app to be ready'
 
@@ -359,7 +361,7 @@ stages:
               --reporter junit \
               --reporter-options "mochaFile=cypress/results/junit-[hash].xml,toConsole=true" \
               --config-file cypress.config.js \
-              --config baseUrl=https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net,pageLoadTimeout=120000,defaultCommandTimeout=15000
+              --config baseUrl=https://$(webAppNameQA).azurewebsites.net,pageLoadTimeout=120000,defaultCommandTimeout=15000
           displayName: 'Run Cypress E2E Tests'
           env:
             NODE_ENV: test
@@ -384,7 +386,6 @@ stages:
   displayName: "Deploy to Production"
   dependsOn: Deploy_QA
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-  # Importar variables de PROD
   variables:
   - group: PROD-Variables
   jobs:
@@ -403,13 +404,12 @@ stages:
                   artifactName: 'drop'
                   downloadPath: '$(System.ArtifactsDirectory)'
 
-              # Configurar variables de entorno
               - task: AzureAppServiceSettings@1
                 displayName: "Configure PROD Environment Variables"
                 inputs:
                   azureSubscription: "$(azureSubscription)"
-                  appName: "$(webAppNamePROD)"  
-                  resourceGroupName: "palabras-ingsoft3-2025"
+                  appName: "$(webAppNamePROD)"
+                  resourceGroupName: "palabras-prod-rg"
                   appSettings: |
                     [
                       { "name": "ENVIRONMENT_NAME", "value": "$(ENVIRONMENT_NAME)" },
@@ -429,7 +429,7 @@ stages:
 
               - script: |
                   echo "Waiting for health endpoint to respond..."
-                  url="https://palabras-prod-amgufubhacevetcn.brazilsouth-01.azurewebsites.net/health"
+                  url="https://$(webAppNamePROD).azurewebsites.net/health"
                   timeout=120
                   interval=5
                   elapsed=0
