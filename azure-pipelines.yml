@@ -349,22 +349,13 @@ stages:
             npx cypress install || true
           displayName: 'Install Cypress + project deps'
 
+        # 👉 Esperar específicamente a que el FRONTEND (/) esté listo
         - script: |
-            echo "🌐 Esperando a que la app QA esté online (para Cypress)..."
-            url="https://$(webAppNameQA).azurewebsites.net/health"
-            timeout=120
-            interval=5
-            elapsed=0
-            until curl -sSf "$url" > /dev/null; do
-              sleep $interval
-              elapsed=$((elapsed + interval))
-              echo "Waiting for QA (Cypress)... ${elapsed}s elapsed"
-              if [ $elapsed -ge $timeout ]; then
-                echo "❌ Health check for Cypress timed out after ${timeout}s"
-                exit 1
-              fi
-            done
-            echo "✅ Health endpoint is OK for Cypress: $url"
+            echo "🌐 Esperando a que el frontend QA esté listo para Cypress..."
+            URL="https://$(webAppNameQA).azurewebsites.net/"
+            # Timeout 5 minutos (300000 ms) para evitar colgadas infinitas
+            npx wait-on --timeout 300000 "$URL"
+            echo "✅ Frontend QA listo en: $URL"
           displayName: 'Wait for deployed QA app to be ready'
 
         - script: |
