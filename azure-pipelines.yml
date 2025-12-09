@@ -390,7 +390,7 @@ stages:
             failTaskOnFailedTests: true
             testRunTitle: 'Cypress E2E Tests - $(Build.BuildNumber)'
             publishRunAttachments: true
-
+            
 # =======================================
 # STAGE 3: DEPLOY PROD
 # =======================================
@@ -399,7 +399,7 @@ stages:
   dependsOn: Deploy_QA
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   variables:
-    - group: PROD-Variables    # Tus variables de PROD
+    - group: PROD-Variables    # Variables de PROD (webAppNamePROD, resourceGroupNamePROD, etc.)
   jobs:
     - deployment: DeployPROD
       displayName: "Desplegar PROD"
@@ -416,18 +416,18 @@ stages:
                   artifactName: 'drop'
                   downloadPath: '$(System.ArtifactsDirectory)'
 
-              # Configurar variables de entorno
+              # Configurar variables de entorno en la Web App de PROD
               - task: AzureAppServiceSettings@1
                 displayName: "Configure PROD Environment Variables"
                 inputs:
                   azureSubscription: "$(azureSubscription)"
                   appName: "$(webAppNamePROD)"
-                  resourceGroupName: "palabras-ingsoft3-2025"   # Cambiá si tu RG de PROD es otro
+                  resourceGroupName: "$(resourceGroupNamePROD)"
                   appSettings: |
                     [
-                      { "name": "ENVIRONMENT_NAME", "value": "$(ENVIRONMENT_NAME)" },
-                      { "name": "NODE_ENV", "value": "$(NODE_ENV)" },
-                      { "name": "DB_PATH", "value": "$(DB_PATH)" }
+                      { "name": "ENVIRONMENT_NAME", "value": "$(ENVIRONMENT_NAME)", "slotSetting": false },
+                      { "name": "NODE_ENV",          "value": "$(NODE_ENV)",          "slotSetting": false },
+                      { "name": "DB_PATH",           "value": "$(DB_PATH)",           "slotSetting": false }
                     ]
 
               - task: AzureWebApp@1
@@ -436,6 +436,7 @@ stages:
                   azureSubscription: "$(azureSubscription)"
                   appType: 'webAppLinux'
                   appName: "$(webAppNamePROD)"
+                  resourceGroupName: "$(resourceGroupNamePROD)"
                   package: '$(System.ArtifactsDirectory)/drop/$(Build.BuildId).zip'
                   runtimeStack: 'NODE|20-lts'
                   startUpCommand: 'NODE_ENV=production node index.js'
