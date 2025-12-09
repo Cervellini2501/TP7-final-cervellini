@@ -1,16 +1,20 @@
-import { defineConfig } from "cypress";
+// cypress.config.js
+module.exports = {
+  e2e: {
+    // Para desarrollo local, no molesta tener esto:
+    baseUrl: 'http://localhost:3000',
 
-export default defineConfig({
-e2e: {
-  baseUrl: 'http://localhost:3000', // URL base por defecto para desarrollo local
-  setupNodeEvents(on, config) {
-    // implement node event listeners here
-  },
-  reporter: 'junit',  // Configura el reporter a JUnit
-  reporterOptions: {
-    mochaFile: 'cypress/results/results-[hash].xml',  // Directorio y nombre de los archivos de resultados
-    toConsole: true,  // Opcional: imprime los resultados en la consola
+    setupNodeEvents(on, config) {
+      // acá irían los event listeners si los necesitás
+      return config;
     },
-},
-experimentalStudio: true,
-});
+
+    reporter: 'junit',
+    reporterOptions: {
+      mochaFile: 'cypress/results/results-[hash].xml',
+      toConsole: true,
+    },
+
+    experimentalStudio: true,
+  },
+};

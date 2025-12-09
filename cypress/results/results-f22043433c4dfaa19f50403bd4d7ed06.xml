@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="0.736" tests="2" failures="0">
+  <testsuite name="Root Suite" timestamp="2025-12-09T04:20:14" tests="0" file="cypress\e2e\filter.cy.js" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Filtrar palabras" timestamp="2025-12-09T04:20:14" tests="2" time="0.733" failures="0">
+    <testcase name="Filtrar palabras Filtra palabras correctamente" time="0.396" classname="Filtra palabras correctamente">
+    </testcase>
+    <testcase name="Filtrar palabras Muestra todas las palabras cuando el filtro está vacío" time="0.256" classname="Muestra todas las palabras cuando el filtro está vacío">
+    </testcase>
+  </testsuite>
+</testsuites>

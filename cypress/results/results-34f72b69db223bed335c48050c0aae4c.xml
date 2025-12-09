@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="3.293" tests="1" failures="0">
+  <testsuite name="Root Suite" timestamp="2025-12-09T00:44:23" tests="0" file="cypress\e2e\add_empty_word.cy.js" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Validación de palabra vacía" timestamp="2025-12-09T00:44:23" tests="1" time="3.282" failures="0">
+    <testcase name="Validación de palabra vacía No agrega palabra si el input está vacío" time="3.208" classname="No agrega palabra si el input está vacío">
+    </testcase>
+  </testsuite>
+</testsuites>

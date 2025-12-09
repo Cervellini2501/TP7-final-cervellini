@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="4.042" tests="2" failures="0">
+  <testsuite name="Root Suite" timestamp="2025-12-09T00:45:28" tests="0" file="cypress\e2e\register.cy.js" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Agregar palabra" timestamp="2025-12-09T00:45:28" tests="2" time="4.035" failures="0">
+    <testcase name="Agregar palabra Registra usuario correctamente" time="2.208" classname="Registra usuario correctamente">
+    </testcase>
+    <testcase name="Agregar palabra No permite registrar un usuario ya existente" time="1.744" classname="No permite registrar un usuario ya existente">
+    </testcase>
+  </testsuite>
+</testsuites>

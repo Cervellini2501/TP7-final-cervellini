@@ -348,14 +348,13 @@ stages:
           fetchDepth: 0
 
         - task: NodeTool@0
-          displayName: 'Install Node.js $(nodeVersion)'
+          displayName: 'Install Node.js 20'
           inputs:
-            versionSpec: $(nodeVersion)
+            versionSpec: '20.x'
 
         - script: |
             echo "📦 Installing Cypress + E2E dependencies"
             npm ci
-            npm install --save-dev cypress wait-on @faker-js/faker
             npx cypress install || true
           displayName: 'Install Cypress + project deps'
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="11.218" tests="2" failures="2">
+  <testsuite name="Root Suite" timestamp="2025-12-09T00:31:55" tests="0" file="cypress\e2e\ordenar.cy.js" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Ordenar palabras" timestamp="2025-12-09T00:31:55" tests="2" time="11.213" failures="2">
+    <testcase name="Ordenar palabras Ordena palabras en orden ascendente" time="0.000" classname="Ordena palabras en orden ascendente">
+      <failure message="Timed out retrying after 4000ms: Expected to find element: `#ordenSelect`, but never found it." type="AssertionError"><![CDATA[AssertionError: Timed out retrying after 4000ms: Expected to find element: `#ordenSelect`, but never found it.
+    at Context.eval (webpack://tp7-final-cervellini/./cypress/e2e/ordenar.cy.js:10:7)]]></failure>
+    </testcase>
+    <testcase name="Ordenar palabras Ordena palabras en orden descendente" time="0.000" classname="Ordena palabras en orden descendente">
+      <failure message="Timed out retrying after 4000ms: Expected to find element: `#ordenSelect`, but never found it." type="AssertionError"><![CDATA[AssertionError: Timed out retrying after 4000ms: Expected to find element: `#ordenSelect`, but never found it.
+    at Context.eval (webpack://tp7-final-cervellini/./cypress/e2e/ordenar.cy.js:31:7)]]></failure>
+    </testcase>
+  </testsuite>
+</testsuites>

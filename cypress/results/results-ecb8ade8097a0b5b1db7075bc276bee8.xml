@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="2.064" tests="2" failures="0">
+  <testsuite name="Root Suite" timestamp="2025-12-09T04:24:33" tests="0" file="cypress\e2e\login.cy.js" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Login de usuario" timestamp="2025-12-09T04:24:33" tests="2" time="2.061" failures="0">
+    <testcase name="Login de usuario Permite ingresar con credenciales correctas" time="0.869" classname="Permite ingresar con credenciales correctas">
+    </testcase>
+    <testcase name="Login de usuario No permite ingresar con credenciales incorrectas" time="1.084" classname="No permite ingresar con credenciales incorrectas">
+    </testcase>
+  </testsuite>
+</testsuites>
