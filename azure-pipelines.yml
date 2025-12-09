@@ -7,11 +7,25 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
+# ==========================
+# VARIABLES GLOBALES
+# ==========================
 variables:
-  nodeVersion: '20.x'  
-  azureSubscription: 'azure-palabras-connection' 
-  webAppNameQA: 'palabras-qa' 
-  webAppNamePROD: 'palabras-prod' 
+  # Grupo con SONAR_ORG, SONAR_PROJECT_KEY, SONAR_TOKEN
+  - group: TP7-Variables
+
+  - name: nodeVersion
+    value: '20.x'
+
+  - name: azureSubscription
+    value: 'azure-palabras-connection'
+
+  # Tus Web Apps reales
+  - name: webAppNameQA
+    value: 'palabras-qa-vc'
+
+  - name: webAppNamePROD
+    value: 'palabras-prod'
 
 # =======================================
 # STAGE 1: Build and Test Backend + Frontend
@@ -73,14 +87,13 @@ stages:
             pathToSources: '$(System.DefaultWorkingDirectory)/backend'
             failIfCoverageEmpty: true
 
-        # Verificar threshold del backend (Jest ya falla si no cumple)
+        # Verificar threshold del backend
         - script: |
             echo "════════════════════════════════════════"
             echo "  BACKEND: Verifying coverage threshold"
             echo "════════════════════════════════════════"
             cd backend
             
-            # Extraer el porcentaje del archivo json-summary
             if [ -f "coverage/coverage-summary.json" ]; then
               LINES_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['lines']['pct'])")
               STATEMENTS_PCT=$(cat coverage/coverage-summary.json | python3 -c "import sys, json; print(json.load(sys.stdin)['total']['statements']['pct'])")
@@ -92,11 +105,9 @@ stages:
               echo "Functions: ${FUNCTIONS_PCT}%"
               echo "Branches: ${BRANCHES_PCT}%"
               
-              # Calcular promedio
               AVG=$(python3 -c "print(round((${LINES_PCT} + ${STATEMENTS_PCT} + ${FUNCTIONS_PCT} + ${BRANCHES_PCT}) / 4, 2))")
               echo "Average Coverage: ${AVG}%"
               
-              # Verificar threshold
               if (( $(echo "${AVG} < 70" | bc -l) )); then
                 echo "❌ Backend coverage (${AVG}%) is below 70%"
                 exit 1
@@ -186,15 +197,27 @@ stages:
           displayName: "Frontend - Verify Coverage Threshold"
           condition: succeededOrFailed()
 
-        - task: SonarCloudPrepare@3
-          inputs:
-            SonarQube: 'sonar-cloud-connection'
-            organization: 'sofiaoliveto'
-            scannerMode: 'cli'
-            configMode: 'file'
-            cliProjectKey: 'sofiaoliveto_TP7'
-            cliProjectName: 'TP7'
-            cliSources: '.'
+        # ===============================================
+        # SONARCLOUD (usando tus variables SONAR_*)
+        # ===============================================
+        - script: |
+            set -e
+            echo "════════════════════════════════════════"
+            echo "  SONARCLOUD: Downloading SonarScanner CLI"
+            echo "════════════════════════════════════════"
+            curl -sSLo sonar-scanner.zip \
+              https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+            echo "Descomprimiendo SonarScanner..."
+            unzip -q sonar-scanner.zip
+            export PATH="$PATH:$(pwd)/sonar-scanner-5.0.1.3006-linux/bin"
+            echo "Ejecutando análisis SonarCloud..."
+            sonar-scanner \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.organization=$(SONAR_ORG) \
+              -Dsonar.projectKey=$(SONAR_PROJECT_KEY) \
+              -Dsonar.token=$(SONAR_TOKEN) \
+              -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info,frontend/coverage/lcov.info
+          displayName: 'SonarCloud - análisis'
 
         # ===============================================
         # BUILD Y PREPARAR ARTEFACTOS
@@ -218,14 +241,6 @@ stages:
               *.css
             TargetFolder: 'backend/frontend'
             OverWrite: true
-
-        - task: SonarCloudAnalyze@3
-          inputs:
-            jdkversion: 'JAVA_HOME_17_X64'
-
-        - task: SonarCloudPublish@3
-          inputs:
-            pollingTimeoutSec: '300'
 
         # ARCHIVE APPLICATION FILES
         - task: ArchiveFiles@2
@@ -256,11 +271,11 @@ stages:
   dependsOn: BuildAndTest
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   variables:
-  - group: QA-Variables
+    - group: QA-Variables      # ENVIRONMENT_NAME, NODE_ENV, DB_PATH, etc.
+  jobs:
     #
     # JOB 1: Deploy to Azure QA
     #
-  jobs:
     - deployment: DeployToAzureQA
       displayName: 'Deploy to QA'
       environment: 'QA'
@@ -282,7 +297,7 @@ stages:
                 inputs:
                   azureSubscription: "$(azureSubscription)"
                   appName: "$(webAppNameQA)"
-                  resourceGroupName: "palabras-ingsoft3-2025"
+                  resourceGroupName: "palabras-qa-rg"
                   appSettings: |
                     [
                       { "name": "ENVIRONMENT_NAME", "value": "$(ENVIRONMENT_NAME)" },
@@ -302,7 +317,7 @@ stages:
 
               - script: |
                   echo "Waiting for health endpoint to respond..."
-                  url="https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net/health"
+                  url="https://$(webAppNameQA).azurewebsites.net/health"
                   timeout=120
                   interval=5
                   elapsed=0
@@ -346,7 +361,7 @@ stages:
 
         - script: |
             echo "🌐 Esperando a que la app QA esté online..."
-            URL="https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net"
+            URL="https://$(webAppNameQA).azurewebsites.net"
             npx wait-on "$URL"
           displayName: 'Wait for deployed QA app to be ready'
 
@@ -359,7 +374,7 @@ stages:
               --reporter junit \
               --reporter-options "mochaFile=cypress/results/junit-[hash].xml,toConsole=true" \
               --config-file cypress.config.js \
-              --config baseUrl=https://palabras-qa-gebud8fdgxejeyen.brazilsouth-01.azurewebsites.net,pageLoadTimeout=120000,defaultCommandTimeout=15000
+              --config baseUrl=https://$(webAppNameQA).azurewebsites.net,pageLoadTimeout=120000,defaultCommandTimeout=15000
           displayName: 'Run Cypress E2E Tests'
           env:
             NODE_ENV: test
@@ -384,9 +399,8 @@ stages:
   displayName: "Deploy to Production"
   dependsOn: Deploy_QA
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-  # Importar variables de PROD
   variables:
-  - group: PROD-Variables
+    - group: PROD-Variables    # Tus variables de PROD
   jobs:
     - deployment: DeployPROD
       displayName: "Desplegar PROD"
@@ -408,8 +422,8 @@ stages:
                 displayName: "Configure PROD Environment Variables"
                 inputs:
                   azureSubscription: "$(azureSubscription)"
-                  appName: "$(webAppNamePROD)"  
-                  resourceGroupName: "palabras-ingsoft3-2025"
+                  appName: "$(webAppNamePROD)"
+                  resourceGroupName: "palabras-ingsoft3-2025"   # Cambiá si tu RG de PROD es otro
                   appSettings: |
                     [
                       { "name": "ENVIRONMENT_NAME", "value": "$(ENVIRONMENT_NAME)" },
@@ -429,7 +443,7 @@ stages:
 
               - script: |
                   echo "Waiting for health endpoint to respond..."
-                  url="https://palabras-prod-amgufubhacevetcn.brazilsouth-01.azurewebsites.net/health"
+                  url="https://$(webAppNamePROD).azurewebsites.net/health"
                   timeout=120
                   interval=5
                   elapsed=0
