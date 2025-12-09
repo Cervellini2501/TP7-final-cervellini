@@ -17,6 +17,11 @@ coverage/
 # Cypress
 cypress/screenshots/
 cypress/videos/
+cypress/results/
+
+# Test results
+backend/test-results/
+frontend/test-results/
 
 # Environment variables
 .env

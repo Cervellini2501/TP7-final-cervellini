@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="Mocha Tests" time="1.481" tests="1" failures="0">
-  <testsuite name="Root Suite" timestamp="2025-12-09T00:45:05" tests="0" file="cypress\e2e\delete_cancelled.cy.js" time="0.000" failures="0">
-  </testsuite>
-  <testsuite name="Cancelación de borrado" timestamp="2025-12-09T00:45:05" tests="1" time="1.475" failures="0">
-    <testcase name="Cancelación de borrado No borra la palabra si el usuario cancela la confirmación" time="1.421" classname="No borra la palabra si el usuario cancela la confirmación">
-    </testcase>
-  </testsuite>
-</testsuites>
