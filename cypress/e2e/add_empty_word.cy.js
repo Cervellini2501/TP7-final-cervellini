@@ -1,26 +1,30 @@
 describe('Validación de palabra vacía', () => {
   it('No agrega palabra si el input está vacío', () => {
-    cy.visit('/'); // Usa baseUrl del config
-      cy.get('#loginUsername').click();
-      cy.get('#loginUsername').type('prueba');
-      cy.get('#loginPassword').click();
-      cy.get('#loginPassword').type('prueba');
-      cy.get('#loginForm button').click();
+    cy.visit('/');
 
-    // Esperar a que el contenedor de palabras exista y un pequeño buffer antes de contar
+    // Login
+    cy.get('#loginUsername').type('prueba');
+    cy.get('#loginPassword').type('prueba');
+    cy.get('#loginForm button').click();
+
+    // Esperar a que exista el contenedor de la lista
     cy.get('#listaPalabras', { timeout: 10000 }).should('exist');
-    cy.wait(1000); // <-- tiempo de espera agregado
 
-    // Contar cuántas palabras hay antes
-    cy.get('#listaPalabras div').then(($itemsBefore) => {
-      const cantidadAntes = $itemsBefore.length;
+    // Contar cuántas palabras hay antes (puede ser 0)
+    cy.get('#listaPalabras').then(($lista) => {
+      const cantidadAntes = $lista.find('.palabra-item').length;
 
-      // Simular clic sin escribir nada
-      cy.get('#palabraInput').clear(); // Asegura que esté vacío
-      cy.get('div.form-group button').click();
+      // Asegurar input vacío
+      cy.get('#palabraInput').clear();
 
-      // Verificar que la cantidad de palabras no cambió
-      cy.get('#listaPalabras div').should('have.length', cantidadAntes);
+      // Click en "Agregar" sin escribir nada
+      cy.contains('button', 'Agregar').click();
+
+      // Volver a leer la lista y contar de nuevo
+      cy.get('#listaPalabras').then(($listaDespues) => {
+        const cantidadDespues = $listaDespues.find('.palabra-item').length;
+        expect(cantidadDespues).to.eq(cantidadAntes);
+      });
     });
   });
 });
