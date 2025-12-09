@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="4.327" tests="1" failures="1">
+  <testsuite name="Root Suite" timestamp="2025-12-09T13:27:06" tests="0" file="cypress\e2e\add_empty_word.cy.js" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Validación de palabra vacía" timestamp="2025-12-09T13:27:06" tests="1" time="4.325" failures="1">
+    <testcase name="Validación de palabra vacía No agrega palabra si el input está vacío" time="0.000" classname="No agrega palabra si el input está vacío">
+      <failure message="expected 2 to equal 0" type="AssertionError"><![CDATA[AssertionError: expected 2 to equal 0
+    at Context.eval (webpack:///./cypress/e2e/add_empty_word.cy.js:26:35)
+    at getRet (https://palabras-qa-vc.azurewebsites.net/__cypress/runner/cypress_runner.js:122460:20)
+    at tryCatcher (https://palabras-qa-vc.azurewebsites.net/__cypress/runner/cypress_runner.js:1777:23)
+    at Promise.attempt.Promise.try (https://palabras-qa-vc.azurewebsites.net/__cypress/runner/cypress_runner.js:4285:29)
+    at Context.thenFn (https://palabras-qa-vc.azurewebsites.net/__cypress/runner/cypress_runner.js:122471:66)
+    at Context.then (https://palabras-qa-vc.azurewebsites.net/__cypress/runner/cypress_runner.js:122722:21)]]></failure>
+    </testcase>
+  </testsuite>
+</testsuites>
